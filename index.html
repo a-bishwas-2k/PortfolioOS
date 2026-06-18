@@ -5061,7 +5061,7 @@
 
         async function syncUSERWithBackend() {
             try {
-                const pass = localStorage.getItem('adm_pass') || '2130';
+                const pass = localStorage.getItem('adm_pass') || ;
                 const res = await fetch('/api/user', {
                     method: 'POST',
                     headers: {
@@ -5817,7 +5817,7 @@
     </div>`).join('');
 
             bars.innerHTML = `<div class="ap-bento-grid" style="padding:0; display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:16px;">${skillCards}</div>`;
-            
+
             requestAnimationFrame(() => requestAnimationFrame(fillAboutBars));
             aboutSkillsAnimated = true;
         }
