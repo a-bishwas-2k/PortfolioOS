@@ -80,25 +80,7 @@ sudo admin
 
 ---
 
-## 📸 Screenshots
 
-### Desktop View
-
-![Desktop](./screenshots/home.png)
-
-### Terminal
-
-![Terminal](./screenshots/terminal.png)
-
-### Skills App
-
-![Skills](./screenshots/skills.png)
-
-### Contact App
-
-![Contact](./screenshots/contact.png)
-
----
 
 # 🧠 Terminal Guide
 
