@@ -72,14 +72,30 @@ app.post('/api/user', async (req, res) => {
             return res.status(400).json({ success: false, error: 'No user data provided' });
         }
 
-        // Basic security header check: x-admin-password (default: "2130")
+        // Basic security header check: x-admin-password
         const passwordHeader = req.headers['x-admin-password'];
         if (!passwordHeader) {
             return res.status(401).json({ success: false, error: 'Authorization password required' });
         }
-        // In full-stack mode, password must match 2130 or the stored USER password
-        const expectedPassword = "2130";
-        if (passwordHeader !== expectedPassword && passwordHeader !== String(user.admin_password || '')) {
+        // In full-stack mode, password must match ADMIN_PASSWORD from .env or the stored USER password
+        const expectedPassword = process.env.ADMIN_PASSWORD || "";
+        
+        // Fetch existing stored password to validate against (do not trust req.body)
+        let storedPassword = "";
+        if (isDbConnected) {
+            const dbDoc = await UserConfig.findOne({ id: 'single_user' });
+            if (dbDoc && dbDoc.data && dbDoc.data.admin_password) {
+                storedPassword = String(dbDoc.data.admin_password);
+            }
+        } else if (memoryUserCache && memoryUserCache.admin_password) {
+            storedPassword = String(memoryUserCache.admin_password);
+        }
+        
+        let isValid = false;
+        if (expectedPassword && passwordHeader === expectedPassword) isValid = true;
+        if (storedPassword && passwordHeader === storedPassword) isValid = true;
+
+        if (!isValid) {
             return res.status(403).json({ success: false, error: 'Invalid admin password' });
         }
 

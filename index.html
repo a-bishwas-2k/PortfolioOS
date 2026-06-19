@@ -5061,7 +5061,7 @@
 
         async function syncUSERWithBackend() {
             try {
-                const pass = localStorage.getItem('adm_pass') || ;
+                const pass = localStorage.getItem('adm_pass') || '';
                 const res = await fetch('/api/user', {
                     method: 'POST',
                     headers: {
@@ -7323,15 +7323,33 @@
         ════════════════════════════════════════════════════════ */
 
         /* ── Auth ── */
-        let ADM_PASS = localStorage.getItem('adm_pass') || '2130';
+        let ADM_PASS = localStorage.getItem('adm_pass') || null;
         let admAuthed = false;
         let _admConfirmCb = null;
 
-        function admLogin() {
+        const ADM_HASH = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9'; // admin123
+        async function hashPass(p) {
+            const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(p));
+            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function admLogin() {
             const inp = document.getElementById('adm-pass-input');
             const errEl = document.getElementById('adm-auth-err');
             if (!inp || !errEl) return;
-            if (inp.value !== ADM_PASS) {
+            
+            const hashed = await hashPass(inp.value);
+            let isValid = false;
+            
+            const customPass = ADM_PASS || USER.admin_password || null;
+
+            if (customPass) {
+                if (inp.value === customPass) isValid = true;
+            } else {
+                if (hashed === ADM_HASH) isValid = true;
+            }
+
+            if (!isValid) {
                 errEl.textContent = '❌ Incorrect password';
                 errEl.style.display = 'block';
                 errEl.style.animation = 'none';
@@ -7339,6 +7357,9 @@
                 errEl.style.animation = 'admShake 0.3s ease';
                 inp.value = ''; inp.focus(); return;
             }
+            
+            ADM_PASS = inp.value;
+            localStorage.setItem('adm_pass', ADM_PASS);
             admAuthed = true; inp.value = '';
             document.getElementById('adm-auth-gate').style.display = 'none';
             document.getElementById('adm-shell').style.display = 'flex';
@@ -8276,20 +8297,72 @@
                     '</div>');
         }
 
-        function admChangePass() {
+        async function admChangePass() {
             var old = (document.getElementById('sp-old') || {}).value || '';
             var nw = (document.getElementById('sp-new') || {}).value || '';
             var conf = (document.getElementById('sp-confirm') || {}).value || '';
             var errEl = document.getElementById('sp-err');
             var showE = function (m) { if (errEl) { errEl.textContent = m; errEl.style.display = 'block'; } };
             if (errEl) errEl.style.display = 'none';
-            if (old !== ADM_PASS) { showE('❌ Current password incorrect'); return; }
+            
+            const hashedOld = await hashPass(old);
+            let isOldValid = false;
+            
+            const customPass = ADM_PASS || USER.admin_password || null;
+            if (customPass) {
+                if (old === customPass) isOldValid = true;
+            } else {
+                if (hashedOld === ADM_HASH) isOldValid = true;
+            }
+            if (!isOldValid) { showE('❌ Current password incorrect'); return; }
+            
             if (nw.length < 4) { showE('⚠️ Min 4 characters'); return; }
             if (nw !== conf) { showE('⚠️ Passwords do not match'); return; }
             ADM_PASS = nw;
             localStorage.setItem('adm_pass', nw);
+            USER.admin_password = nw;
+            saveUSER();
             admToast('✅ Password updated!');
+            document.getElementById('sp-old').value = '';
+            document.getElementById('sp-new').value = '';
+            document.getElementById('sp-confirm').value = '';
             admRenderSecurity();
+        }
+
+        async function chpwSubmit() {
+            var old = (document.getElementById('chpw-old') || {}).value || '';
+            var nw = (document.getElementById('chpw-new') || {}).value || '';
+            var conf = (document.getElementById('chpw-confirm') || {}).value || '';
+            var errEl = document.getElementById('chpw-err');
+            var showE = function (m) { if (errEl) { errEl.textContent = m; errEl.style.display = 'block'; } };
+            if (errEl) errEl.style.display = 'none';
+            
+            const hashedOld = await hashPass(old);
+            let isOldValid = false;
+            
+            const customPass = ADM_PASS || USER.admin_password || null;
+            if (customPass) {
+                if (old === customPass) isOldValid = true;
+            } else {
+                if (hashedOld === ADM_HASH) isOldValid = true;
+            }
+            if (!isOldValid) { showE('❌ Current password incorrect'); return; }
+            
+            if (nw.length < 4) { showE('⚠️ Min 4 characters'); return; }
+            if (nw !== conf) { showE('⚠️ Passwords do not match'); return; }
+            ADM_PASS = nw;
+            localStorage.setItem('adm_pass', nw);
+            USER.admin_password = nw;
+            saveUSER();
+            
+            var overlay = document.getElementById('chpw-overlay');
+            if (overlay) document.body.removeChild(overlay);
+            
+            termFocus();
+            if (typeof appendLine === 'function') {
+                appendLine(`<span class="green">✓ Admin password updated successfully!</span>`);
+                appendBlank();
+            }
         }
 
         /* ══════════════ EXPORT ══════════════ */
