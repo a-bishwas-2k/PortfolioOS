@@ -164,9 +164,7 @@ Data Analyst • Full Stack Developer • CSE Graduate
 
 📧 bishwasabhi9596@gmail.com
 
-🌐 Portfolio: YOUR_PORTFOLIO_URL
-
-💼 LinkedIn: YOUR_LINKEDIN_URL
+💼 LinkedIn:(http://www.linkedin.com/in/abhishek-9k96)
 
 ---
 
