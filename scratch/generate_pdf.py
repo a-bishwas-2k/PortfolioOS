@@ -1,0 +1,772 @@
+import os
+import subprocess
+
+html_content = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PortfolioOS — Complete Technical Documentation & Architecture Report</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@700;800&display=swap');
+
+    @page {
+        size: A4;
+        margin: 18mm 15mm 18mm 15mm;
+        @bottom-right {
+            content: "Page " counter(page);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8pt;
+            color: #64748B;
+        }
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        color: #1E293B;
+        background: #FFFFFF;
+        line-height: 1.6;
+        font-size: 10pt;
+    }
+
+    /* Cover Page */
+    .cover-page {
+        page-break-after: always;
+        height: 98vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 40px 20px;
+        background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 50%, #311042 100%);
+        color: #FFFFFF;
+        border-radius: 12px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .cover-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .cover-badge {
+        background: rgba(99, 102, 241, 0.25);
+        border: 1px solid rgba(129, 140, 248, 0.4);
+        padding: 6px 16px;
+        border-radius: 30px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 9pt;
+        color: #818CF8;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    .cover-title-group {
+        margin-top: 60px;
+    }
+
+    .cover-title {
+        font-family: 'Syne', sans-serif;
+        font-size: 38pt;
+        font-weight: 800;
+        line-height: 1.1;
+        background: linear-gradient(135deg, #FFFFFF 0%, #A5B4FC 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 16px;
+    }
+
+    .cover-subtitle {
+        font-size: 15pt;
+        color: #94A3B8;
+        font-weight: 400;
+        max-width: 600px;
+        line-height: 1.5;
+    }
+
+    .cover-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-top: 40px;
+    }
+
+    .cover-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 16px 20px;
+        border-radius: 10px;
+        backdrop-filter: blur(10px);
+    }
+
+    .cover-card-label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 8pt;
+        color: #818CF8;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+
+    .cover-card-value {
+        font-size: 11pt;
+        font-weight: 600;
+        color: #F8FAFC;
+    }
+
+    .cover-footer {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 20px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 9pt;
+        color: #64748B;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Document Structure */
+    .page-break {
+        page-break-after: always;
+    }
+
+    h1, h2, h3, h4 {
+        color: #0F172A;
+        font-family: 'Syne', sans-serif;
+        font-weight: 700;
+    }
+
+    h1 {
+        font-size: 20pt;
+        border-bottom: 2px solid #E2E8F0;
+        padding-bottom: 8px;
+        margin-top: 24px;
+        margin-bottom: 16px;
+        color: #1E1B4B;
+    }
+
+    h2 {
+        font-size: 15pt;
+        margin-top: 20px;
+        margin-bottom: 12px;
+        color: #334155;
+        border-left: 4px solid #6366F1;
+        padding-left: 10px;
+    }
+
+    h3 {
+        font-size: 12pt;
+        margin-top: 16px;
+        margin-bottom: 8px;
+        color: #475569;
+    }
+
+    p {
+        margin-bottom: 12px;
+        color: #334155;
+        text-align: justify;
+    }
+
+    ul, ol {
+        margin-bottom: 14px;
+        padding-left: 20px;
+    }
+
+    li {
+        margin-bottom: 6px;
+        color: #334155;
+    }
+
+    /* Tables */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 9pt;
+    }
+
+    th, td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    th {
+        background-color: #F8FAFC;
+        color: #1E293B;
+        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+        border-top: 1px solid #CBD5E1;
+        border-bottom: 2px solid #CBD5E1;
+    }
+
+    tr:nth-child(even) td {
+        background-color: #F8FAFC;
+    }
+
+    /* Callout & Alert Boxes */
+    .callout {
+        padding: 14px 18px;
+        border-radius: 8px;
+        margin: 16px 0;
+        font-size: 9.5pt;
+    }
+
+    .callout-info {
+        background-color: #EFF6FF;
+        border-left: 4px solid #3B82F6;
+        color: #1E40AF;
+    }
+
+    .callout-success {
+        background-color: #F0FDF4;
+        border-left: 4px solid #22C55E;
+        color: #166534;
+    }
+
+    .callout-warning {
+        background-color: #FEFCE8;
+        border-left: 4px solid #EAB308;
+        color: #854D0E;
+    }
+
+    .callout-danger {
+        background-color: #FEF2F2;
+        border-left: 4px solid #EF4444;
+        color: #991B1B;
+    }
+
+    .callout-title {
+        font-weight: 700;
+        margin-bottom: 4px;
+        font-family: 'Syne', sans-serif;
+    }
+
+    /* Diagram Wrappers */
+    .diagram-box {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        text-align: center;
+        page-break-inside: avoid;
+    }
+
+    .diagram-title {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 9pt;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        margin-bottom: 16px;
+        letter-spacing: 1px;
+    }
+
+    /* Code Blocks */
+    code {
+        font-family: 'JetBrains Mono', monospace;
+        background: #F1F5F9;
+        color: #0F172A;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 8.5pt;
+    }
+
+    pre {
+        background: #0F172A;
+        color: #F8FAFC;
+        padding: 14px 18px;
+        border-radius: 8px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 8.5pt;
+        overflow-x: auto;
+        margin: 14px 0;
+        line-height: 1.5;
+        page-break-inside: avoid;
+    }
+
+    pre code {
+        background: transparent;
+        color: inherit;
+        padding: 0;
+    }
+
+    /* Flowchart SVG Styling */
+    svg {
+        max-width: 100%;
+        height: auto;
+    }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover-page">
+    <div class="cover-header">
+        <div style="font-family: 'Syne', sans-serif; font-size: 18pt; font-weight: 800; color: #FFF;">
+            PORTFOLIO<span style="color: #818CF8;">OS</span>
+        </div>
+        <div class="cover-badge">Official Architecture Specification</div>
+    </div>
+
+    <div class="cover-title-group">
+        <div class="cover-title">Full System Documentation & Architecture Report</div>
+        <div class="cover-subtitle">
+            An in-depth technical manual detailing the full-stack architecture, technology stack, interactive window engine, multi-layer security protocols, and state management of PortfolioOS.
+        </div>
+
+        <div class="cover-grid">
+            <div class="cover-card">
+                <div class="cover-card-label">Core Frontend Stack</div>
+                <div class="cover-card-value">React 19 + Vite + Tailwind v4 + Zustand</div>
+            </div>
+            <div class="cover-card">
+                <div class="cover-card-label">Core Backend Stack</div>
+                <div class="cover-card-value">Express 5 + MongoDB + Mongoose + Bcrypt</div>
+            </div>
+            <div class="cover-card">
+                <div class="cover-card-label">Security Protocol</div>
+                <div class="cover-card-value">Double Auth (PIN + 6-Digit Email OTP)</div>
+            </div>
+            <div class="cover-card">
+                <div class="cover-card-label">OS UI Subsystem</div>
+                <div class="cover-card-value">React-Rnd Windowing & Framer Motion</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="cover-footer">
+        <div>Author: PortfolioOS Engineering Team</div>
+        <div>Date: July 2026</div>
+        <div>Version: 2.4.0 (Production)</div>
+    </div>
+</div>
+
+<!-- SECTION 1: EXECUTIVE SUMMARY -->
+<h1>1. Executive Summary & Product Vision</h1>
+<p>
+    <strong>PortfolioOS</strong> is a revolutionary web application that reimagines traditional personal portfolios by embedding a complete desktop operating system within the web browser. Rather than navigating static Web pages, visitors interact with a responsive desktop environment equipped with draggable windows, an animated dock, top menu bar, interactive terminal CLI, customizable themes, and integrated application suites.
+</p>
+
+<div class="callout callout-info">
+    <div class="callout-title">💡 Core Architecture Philosophy</div>
+    PortfolioOS combines <strong>instant client-side responsiveness</strong> via Zustand local state with <strong>resilient background database synchronization</strong> via MongoDB. High-privilege administrative functions are guarded by enterprise-grade double authentication (PIN + Email OTP).
+</div>
+
+<p>
+    Key highlights of PortfolioOS include:
+</p>
+<ul>
+    <li><strong>Browser-Native Desktop Engine:</strong> Full windowing system with z-index stacking, minimization, maximization, dragging, resizing, and window focus management powered by <code>react-rnd</code>.</li>
+    <li><strong>Multi-Factor Security:</strong> Sensitive administrative actions (PIN resets, email updates, database wipes) require 2-step verification—a static Bcrypt-hashed PIN followed by a single-use 6-digit email OTP.</li>
+    <li><strong>Interactive Terminal Subsystem:</strong> A custom Unix-like terminal app supporting real-time commands (<code>help</code>, <code>skills</code>, <code>projects</code>, <code>sudo</code>, <code>matrix</code>, <code>theme</code>, <code>clear</code>).</li>
+    <li><strong>Dynamic Theme Engine:</strong> Live modification of CSS root variables (fonts, accent colors, wallpapers, density, animations) persisted in browser local storage.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- SECTION 2: TECHNOLOGY STACK -->
+<h1>2. Technology Stack Breakdown</h1>
+
+<h2>2.1 Backend Technology Stack</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Technology</th>
+            <th>Version</th>
+            <th>Role & Purpose in PortfolioOS</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Node.js</strong></td>
+            <td>v23.10.0</td>
+            <td>Asynchronous server runtime executing backend operations and network handlers.</td>
+        </tr>
+        <tr>
+            <td><strong>Express.js</strong></td>
+            <td>v5.2.1</td>
+            <td>REST API framework providing route controllers, session validation, CORS, and security middleware.</td>
+        </tr>
+        <tr>
+            <td><strong>MongoDB & Mongoose</strong></td>
+            <td>v9.6.2</td>
+            <td>NoSQL database and Object Data Modeling (ODM) layer for <code>User</code>, <code>UserConfig</code>, and <code>Otp</code> schemas.</td>
+        </tr>
+        <tr>
+            <td><strong>Bcrypt.js</strong></td>
+            <td>v3.0.3</td>
+            <td>10-round salted password-hashing library securing administrative PINs and OTP validation hashes.</td>
+        </tr>
+        <tr>
+            <td><strong>Nodemailer</strong></td>
+            <td>v9.0.3</td>
+            <td>Email dispatch service supporting production SMTP transports and automated Ethereal Email test accounts.</td>
+        </tr>
+        <tr>
+            <td><strong>CORS</strong></td>
+            <td>v2.8.6</td>
+            <td>Cross-Origin Resource Sharing security layer restricting API access to dynamic whitelist origins.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>2.2 Frontend Technology Stack</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Technology</th>
+            <th>Version</th>
+            <th>Role & Purpose in PortfolioOS</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>React</strong></td>
+            <td>v19.2.7</td>
+            <td>Component UI library rendering the desktop shell, window applications, dock, and modals.</td>
+        </tr>
+        <tr>
+            <td><strong>Vite</strong></td>
+            <td>v8.1.1</td>
+            <td>Lightning-fast frontend build tool and hot-reloading dev server.</td>
+        </tr>
+        <tr>
+            <td><strong>Tailwind CSS</strong></td>
+            <td>v4.3.2</td>
+            <td>Utility-first CSS styling engine providing design system tokens and glassmorphism UI styles.</td>
+        </tr>
+        <tr>
+            <td><strong>Zustand</strong></td>
+            <td>v5.0.14</td>
+            <td>Centralized state manager controlling window stacks, active apps, themes, user preferences, and REST sync.</td>
+        </tr>
+        <tr>
+            <td><strong>Framer Motion</strong></td>
+            <td>v12.42.2</td>
+            <td>Animation library powering dock magnification, modal transitions, desktop booting animations, and window effects.</td>
+        </tr>
+        <tr>
+            <td><strong>React-Rnd</strong></td>
+            <td>v10.5.3</td>
+            <td>Resizable and draggable window container layer powering the OS desktop environment.</td>
+        </tr>
+        <tr>
+            <td><strong>Lucide & React Icons</strong></td>
+            <td>v1.23 / v5.7</td>
+            <td>Vector icon systems powering window controls, taskbar indicators, and app launchers.</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- SECTION 3: SYSTEM ARCHITECTURE & DIAGRAMS -->
+<div class="page-break"></div>
+<h1>3. System Architecture & Flow Diagrams</h1>
+
+<div class="diagram-box">
+    <div class="diagram-title">Figure 3.1: High-Level PortfolioOS System Architecture</div>
+    <svg viewBox="0 0 750 340" width="100%" xmlns="http://www.w3.org/2000/svg">
+        <!-- Background box -->
+        <rect x="10" y="10" width="730" height="320" rx="10" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="2"/>
+        
+        <!-- Frontend Zone -->
+        <rect x="30" y="30" width="320" height="280" rx="8" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+        <text x="45" y="55" font-family="Syne, sans-serif" font-weight="700" font-size="12" fill="#1E1B4B">BROWSER CLIENT (React 19 / Vite)</text>
+        
+        <rect x="50" y="75" width="280" height="50" rx="6" fill="#EEF2FF" stroke="#6366F1" stroke-width="1.5"/>
+        <text x="60" y="98" font-family="Inter, sans-serif" font-weight="700" font-size="10" fill="#3730A3">Desktop & Window Manager (React-Rnd)</text>
+        <text x="60" y="114" font-family="Inter, sans-serif" font-size="9" fill="#4338CA">Dock, MenuBar, Portfolio Apps, Terminal</text>
+
+        <rect x="50" y="140" width="280" height="50" rx="6" fill="#F0FDF4" stroke="#22C55E" stroke-width="1.5"/>
+        <text x="60" y="163" font-family="Inter, sans-serif" font-weight="700" font-size="10" fill="#166534">Zustand Central Store (useStore.js)</text>
+        <text x="60" y="179" font-family="Inter, sans-serif" font-size="9" fill="#15803D">Window Stacks, Theme Settings, User Payload</text>
+
+        <rect x="50" y="205" width="280" height="50" rx="6" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5"/>
+        <text x="60" y="228" font-family="Inter, sans-serif" font-weight="700" font-size="10" fill="#92400E">Session Storage & Headers</text>
+        <text x="60" y="244" font-family="Inter, sans-serif" font-size="9" fill="#B45309">adm_session_v2 token in localStorage</text>
+
+        <!-- Connection Lines -->
+        <path d="M 350 165 L 400 165" stroke="#6366F1" stroke-width="3" marker-end="url(#arrow)" fill="none"/>
+        <text x="352" y="155" font-family="JetBrains Mono, monospace" font-size="8" fill="#475569">REST API</text>
+
+        <!-- Backend Zone -->
+        <rect x="400" y="30" width="320" height="280" rx="8" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+        <text x="415" y="55" font-family="Syne, sans-serif" font-weight="700" font-size="12" fill="#1E1B4B">EXPRESS BACKEND (Node.js)</text>
+
+        <rect x="420" y="75" width="280" height="45" rx="6" fill="#F8FAFC" stroke="#64748B" stroke-width="1.5"/>
+        <text x="430" y="95" font-family="Inter, sans-serif" font-weight="700" font-size="10" fill="#1E293B">Security & Middleware Stack</text>
+        <text x="430" y="109" font-family="Inter, sans-serif" font-size="9" fill="#475569">CSP, CORS, Rate Limiters, Session Validator</text>
+
+        <rect x="420" y="130" width="130" height="65" rx="6" fill="#EFF6FF" stroke="#3B82F6" stroke-width="1.5"/>
+        <text x="430" y="150" font-family="Inter, sans-serif" font-weight="700" font-size="9" fill="#1E40AF">MongoDB Models</text>
+        <text x="430" y="165" font-family="Inter, sans-serif" font-size="8" fill="#1D4ED8">• User Schema</text>
+        <text x="430" y="177" font-family="Inter, sans-serif" font-size="8" fill="#1D4ED8">• UserConfig Data</text>
+
+        <rect x="570" y="130" width="130" height="65" rx="6" fill="#FAF5FF" stroke="#A855F7" stroke-width="1.5"/>
+        <text x="580" y="150" font-family="Inter, sans-serif" font-weight="700" font-size="9" fill="#6B21A8">Auth & Security</text>
+        <text x="580" y="165" font-family="Inter, sans-serif" font-size="8" fill="#7E22CE">• Bcrypt Hashing</text>
+        <text x="580" y="177" font-family="Inter, sans-serif" font-size="8" fill="#7E22CE">• Otp Schema (TTL)</text>
+
+        <rect x="420" y="210" width="280" height="45" rx="6" fill="#FDF2F8" stroke="#EC4899" stroke-width="1.5"/>
+        <text x="430" y="230" font-family="Inter, sans-serif" font-weight="700" font-size="10" fill="#9D174D">Nodemailer SMTP Engine</text>
+        <text x="430" y="244" font-family="Inter, sans-serif" font-size="9" fill="#BE185D">Production SMTP & Ethereal Test Account Dispatcher</text>
+    </svg>
+</div>
+
+<div class="diagram-box">
+    <div class="diagram-title">Figure 3.2: Double Authentication Security Flowchart</div>
+    <svg viewBox="0 0 750 260" width="100%" xmlns="http://www.w3.org/2000/svg">
+        <!-- Flow Boxes -->
+        <rect x="20" y="30" width="140" height="60" rx="8" fill="#EEF2FF" stroke="#6366F1" stroke-width="2"/>
+        <text x="30" y="55" font-family="Syne, sans-serif" font-weight="700" font-size="10" fill="#3730A3">1. Trigger Action</text>
+        <text x="30" y="72" font-family="Inter, sans-serif" font-size="8.5" fill="#4338CA">Reset PIN / Erase Data</text>
+
+        <path d="M 160 60 L 190 60" stroke="#6366F1" stroke-width="2" fill="none"/>
+
+        <rect x="190" y="30" width="150" height="60" rx="8" fill="#F0FDF4" stroke="#22C55E" stroke-width="2"/>
+        <text x="200" y="55" font-family="Syne, sans-serif" font-weight="700" font-size="10" fill="#166534">2. Step 1: PIN Check</text>
+        <text x="200" y="72" font-family="Inter, sans-serif" font-size="8.5" fill="#15803D">Validate Bcrypt Hash</text>
+
+        <path d="M 340 60 L 370 60" stroke="#22C55E" stroke-width="2" fill="none"/>
+
+        <rect x="370" y="30" width="170" height="60" rx="8" fill="#FEF3C7" stroke="#F59E0B" stroke-width="2"/>
+        <text x="380" y="55" font-family="Syne, sans-serif" font-weight="700" font-size="10" fill="#92400E">3. Step 2: Dispatch OTP</text>
+        <text x="380" y="72" font-family="Inter, sans-serif" font-size="8.5" fill="#B45309">Send 6-Digit Email Code</text>
+
+        <path d="M 540 60 L 570 60" stroke="#F59E0B" stroke-width="2" fill="none"/>
+
+        <rect x="570" y="30" width="160" height="60" rx="8" fill="#EFF6FF" stroke="#3B82F6" stroke-width="2"/>
+        <text x="580" y="55" font-family="Syne, sans-serif" font-weight="700" font-size="10" fill="#1E40AF">4. Step 3: Verify OTP</text>
+        <text x="580" y="72" font-family="Inter, sans-serif" font-size="8.5" fill="#1D4ED8">Check Hash & Expiry</text>
+
+        <!-- Sub Branch for Execution -->
+        <path d="M 650 90 L 650 160 L 370 160" stroke="#10B981" stroke-width="2" stroke-dasharray="4" fill="none"/>
+
+        <rect x="220" y="135" width="300" height="55" rx="8" fill="#ECFDF5" stroke="#10B981" stroke-width="2"/>
+        <text x="235" y="158" font-family="Syne, sans-serif" font-weight="700" font-size="11" fill="#065F46">5. EXECUTE PRIVILEGED ACTION</text>
+        <text x="235" y="175" font-family="Inter, sans-serif" font-size="9" fill="#047857">Mark OTP as used & update MongoDB records safely</text>
+    </svg>
+</div>
+
+<!-- SECTION 4: DETAILED FUNCTIONALITY & CODEWALK -->
+<div class="page-break"></div>
+<h1>4. Detailed Functionality & Backend Controllers</h1>
+
+<h2>4.1 Security & Session Functions (`server.js`)</h2>
+
+<div class="callout callout-warning">
+    <div class="callout-title">🔒 Brute-Force Rate Limiting Algorithm</div>
+    The backend tracks failed auth attempts in a dynamic memory map keyed by client IP. After 10 consecutive failed attempts, further requests are blocked for 120 seconds.
+</div>
+
+<pre><code>// Rate limiting middleware for authentication attempts
+function rateLimitAuth(req, res, next) {
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+    const now = Date.now();
+    const record = loginAttempts.get(ip) || { count: 0, lockedUntil: 0 };
+
+    if (record.lockedUntil > 0 && record.lockedUntil <= now) {
+        loginAttempts.delete(ip);
+        return next();
+    }
+
+    if (record.lockedUntil > now) {
+        const waitSec = Math.ceil((record.lockedUntil - now) / 1000);
+        return res.status(429).json({
+            success: false,
+            lockedOut: true,
+            waitSeconds: waitSec,
+            error: `Too many failed attempts. Try again in ${waitSec}s.`
+        });
+    }
+
+    req._authIP = ip;
+    next();
+}</code></pre>
+
+<h2>4.2 Comprehensive REST API Endpoint Reference</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>HTTP Method</th>
+            <th>Endpoint</th>
+            <th>Protection</th>
+            <th>Function & Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>GET</code></td>
+            <td><code>/api/user</code></td>
+            <td>Public</td>
+            <td>Fetches active portfolio payload, excluding sensitive hashes, and prunes expired certificates.</td>
+        </tr>
+        <tr>
+            <td><code>POST</code></td>
+            <td><code>/api/auth/login</code></td>
+            <td>Rate Limited</td>
+            <td>Validates admin/user PIN against Bcrypt hash and issues 1-hour session token.</td>
+        </tr>
+        <tr>
+            <td><code>POST</code></td>
+            <td><code>/api/auth/send-otp</code></td>
+            <td>Rate Limited</td>
+            <td>Generates 6-digit random code, hashes it into <code>Otp</code> collection, and dispatches email.</td>
+        </tr>
+        <tr>
+            <td><code>POST</code></td>
+            <td><code>/api/auth/reset-pin</code></td>
+            <td>Rate Limited</td>
+            <td>Verifies OTP hash for reset purpose and updates salted PIN hash in MongoDB.</td>
+        </tr>
+        <tr>
+            <td><code>POST</code></td>
+            <td><code>/api/user</code></td>
+            <td>Session Protected</td>
+            <td>Saves updated portfolio config JSON (projects, skills, education) to database.</td>
+        </tr>
+        <tr>
+            <td><code>POST</code></td>
+            <td><code>/api/profile/confirm-change-email</code></td>
+            <td>Session Protected</td>
+            <td>Verifies OTP sent to new email address and updates profile <code>mailId</code>.</td>
+        </tr>
+        <tr>
+            <td><code>DELETE</code></td>
+            <td><code>/api/profile/erase-data</code></td>
+            <td>Session Protected</td>
+            <td>Verifies Access PIN and clears portfolio config payload completely.</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- SECTION 5: FRONTEND STATE & APPLICATIONS -->
+<div class="page-break"></div>
+<h1>5. Frontend Architecture & Windowing Engine</h1>
+
+<h2>5.1 Zustand Central Store Architecture (`useStore.js`)</h2>
+<p>
+    The central store orchestrates all desktop interactions, window z-index layering, modal states, and backend sync operations.
+</p>
+
+<pre><code>// Window Management in Zustand Store
+openWindow: (winId, title) => set((state) => {
+    const existing = state.windows.find(w => w.id === winId);
+    if (existing) {
+        return {
+            windows: state.windows.map(w => w.id === winId ? { ...w, isMinimized: false, zIndex: Date.now() } : w),
+            activeWindow: winId,
+        };
+    }
+    return {
+        windows: [...state.windows, { id: winId, title, zIndex: Date.now(), isMinimized: false, isMaximized: false }],
+        activeWindow: winId,
+    };
+}),
+
+closeWindow: (winId) => set((state) => ({
+    windows: state.windows.filter(w => w.id !== winId),
+    activeWindow: state.activeWindow === winId ? null : state.activeWindow,
+})),</code></pre>
+
+<h2>5.2 Core Desktop Subsystems</h2>
+<ul>
+    <li><strong>`Window.jsx` Subsystem:</strong> Uses <code>react-rnd</code> to provide 60 FPS window dragging and resizing. Manages minimize, maximize, and active z-index focus styling.</li>
+    <li><strong>`Dock.jsx` Subsystem:</strong> macOS-inspired animated dock featuring Framer Motion spring physics on mouse hover, glowing active indicators, and click launchers.</li>
+    <li><strong>`TerminalApp.jsx` Subsystem:</strong> Embedded Unix-style terminal CLI parsing input commands dynamically and executing internal handlers (e.g., <code>sudo</code>, <code>matrix</code> mode, <code>skills</code> list).</li>
+    <li><strong>`AdminApp.jsx` Subsystem:</strong> Complete administrative interface for updating portfolio content, configuring bio details, managing skill categories, uploading project media, and controlling account security.</li>
+</ul>
+
+<!-- SECTION 6: ADVANTAGES & SECURITY SUMMARY -->
+<div class="page-break"></div>
+<h1>6. Advantages & Security Hardening Summary</h1>
+
+<h2>6.1 Key Architectural Advantages</h2>
+<ol>
+    <li><strong>Distinguished User Experience:</strong> Offers visitors an unforgettable OS-like interface instead of traditional linear portfolio pages.</li>
+    <li><strong>Zero-Latency Local Feedback:</strong> All UI updates apply instantly in client state and save to MongoDB asynchronously in the background.</li>
+    <li><strong>Fault-Tolerant Offline Fallback:</strong> If database connection drops, PortfolioOS falls back gracefully to in-memory caching without breaking user session flow.</li>
+    <li><strong>Modular Component Architecture:</strong> Every OS app (Terminal, Bento, Projects, Settings, Admin) is encapsulated in reusable React 19 components.</li>
+</ol>
+
+<h2>6.2 Multi-Layer Security Safeguards</h2>
+<div class="callout callout-danger">
+    <div class="callout-title">🛡️ Defense-in-Depth Security Matrix</div>
+    PortfolioOS employs multi-tiered defenses across transport, authentication, database, and rate-limiting layers.
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Security Layer</th>
+            <th>Threat Standard</th>
+            <th>Mitigation Technique</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Authentication Factor 1</strong></td>
+            <td>Credential Guessing</td>
+            <td>Salted Bcrypt hashing (10 rounds). Plaintext PINs are never stored or logged.</td>
+        </tr>
+        <tr>
+            <td><strong>Authentication Factor 2</strong></td>
+            <td>Session Compromise</td>
+            <td>Double Authentication requiring 6-digit email OTP for sensitive operations.</td>
+        </tr>
+        <tr>
+            <td><strong>IP Rate Limiting</strong></td>
+            <td>Brute Force Attack</td>
+            <td>10 failed authentication attempts trigger automatic 120-second IP lockout.</td>
+        </tr>
+        <tr>
+            <td><strong>OTP Expiration & Cleanup</strong></td>
+            <td>Replay Attack</td>
+            <td>10-minute validity duration with automatic MongoDB TTL index pruning.</td>
+        </tr>
+        <tr>
+            <td><strong>HTTP Security Headers</strong></td>
+            <td>XSS / Clickjacking / Sniffing</td>
+            <td>Strict CSP rules, X-Frame-Options DENY, X-Content-Type-Options nosniff headers.</td>
+        </tr>
+    </tbody>
+</table>
+
+<br><br>
+<div style="text-align: center; color: #64748B; font-family: 'JetBrains Mono', monospace; font-size: 9pt; border-top: 1px solid #E2E8F0; padding-top: 16px;">
+    — End of PortfolioOS Technical Documentation & Architecture Manual —
+</div>
+
+</body>
+</html>
+"""
+
+html_path = "/home/abhishek/Desktop/PORTFOLIOOS/PortfolioOS_Documentation.html"
+pdf_path = "/home/abhishek/Desktop/PORTFOLIOOS/PortfolioOS_Documentation.pdf"
+
+with open(html_path, "w", encoding="utf-8") as f:
+    f.write(html_content)
+
+print(f"Generated HTML documentation at: {html_path}")
+
+# Render to PDF using Chrome Headless
+cmd = [
+    "google-chrome",
+    "--headless=new",
+    "--disable-gpu",
+    "--no-sandbox",
+    f"--print-to-pdf={pdf_path}",
+    html_path
+]
+
+res = subprocess.run(cmd, capture_output=True, text=True)
+if res.returncode == 0:
+    print(f"Successfully generated PDF documentation at: {pdf_path}")
+else:
+    print(f"Error generating PDF: {res.stderr}")

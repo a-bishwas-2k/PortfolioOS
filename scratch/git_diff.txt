@@ -1,0 +1,662 @@
+diff --git a/index.html b/index.html
+index d53c19b..e12b6fa 100644
+--- a/index.html
++++ b/index.html
+@@ -4781,30 +4781,69 @@
+                         <div
+                             style="font-family:var(--font-ui);font-size:20px;font-weight:800;color:var(--electric);text-align:center;margin-bottom:4px">
+                             Admin Access</div>
+-                        <div
+-                            style="font-size:10.5px;color:var(--text3);text-align:center;margin-bottom:24px;line-height:1.5">
+-                            Restricted area. Authenticate to manage your portfolio.</div>
++
+                         <div id="adm-auth-err"
+                             style="display:none;padding:8px 12px;border-radius:8px;font-size:11px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);color:#F87171;margin-bottom:14px;text-align:center;animation:admShake 0.3s ease">
+                         </div>
+-                        <div style="margin-bottom:12px">
++
++                        <div id="adm-login-view" style="display:flex; flex-direction:column;">
+                             <div
+-                                style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">
+-                                Password</div>
+-                            <input id="adm-pass-input" type="password" placeholder="Enter admin password…"
+-                                autocomplete="off"
+-                                style="width:100%;padding:10px 14px;border-radius:9px;font-size:13px;background:rgba(255,255,255,0.04);border:1px solid rgba(124,58,237,0.22);color:var(--text);font-family:var(--font-mono);outline:none;transition:border-color 0.2s,box-shadow 0.2s;"
+-                                onfocus="this.style.borderColor='rgba(124,58,237,0.6)';this.style.boxShadow='0 0 0 3px rgba(124,58,237,0.1)'"
+-                                onblur="this.style.borderColor='rgba(124,58,237,0.22)';this.style.boxShadow='none'"
+-                                onkeydown="if(event.key==='Enter')admLogin()">
++                                style="font-size:10.5px;color:var(--text3);text-align:center;margin-bottom:24px;line-height:1.5">
++                                Restricted area. Authenticate to manage your portfolio.</div>
++                            <div style="margin-bottom:12px">
++                                <div
++                                    style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">
++                                    Password</div>
++                                <input id="adm-pass-input" type="password" placeholder="Enter admin password…"
++                                    autocomplete="off"
++                                    style="width:100%;padding:10px 14px;border-radius:9px;font-size:13px;background:rgba(255,255,255,0.04);border:1px solid rgba(124,58,237,0.22);color:var(--text);font-family:var(--font-mono);outline:none;transition:border-color 0.2s,box-shadow 0.2s;"
++                                    onfocus="this.style.borderColor='rgba(124,58,237,0.6)';this.style.boxShadow='0 0 0 3px rgba(124,58,237,0.1)'"
++                                    onblur="this.style.borderColor='rgba(124,58,237,0.22)';this.style.boxShadow='none'"
++                                    onkeydown="if(event.key==='Enter')admLogin()">
++                            </div>
++                            <button onclick="admLogin()"
++                                style="width:100%;padding:11px;border-radius:10px;font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--violet),#9333ea);border:none;color:#fff;cursor:pointer;font-family:var(--font-mono);transition:all 0.2s;position:relative;overflow:hidden;margin-bottom:10px"
++                                onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 24px rgba(124,58,237,0.5)'"
++                                onmouseout="this.style.transform='';this.style.boxShadow=''">🔑 Authenticate</button>
++                            <div style="text-align:center;font-size:10px;color:var(--text3);cursor:pointer;text-decoration:underline;margin-bottom:10px"
++                                onclick="toggleResetView()">Forgot Password?</div>
++                            <div style="text-align:center;font-size:10px;color:var(--text3)">Tip: type <span
++                                    style="color:var(--lavender);font-family:var(--font-mono)">sudo admin</span> in
++                                terminal
++                                to open</div>
++                        </div>
++
++                        <div id="adm-reset-view" style="display:none; flex-direction:column;">
++                            <div
++                                style="font-size:10.5px;color:var(--text3);text-align:center;margin-bottom:24px;line-height:1.5">
++                                Reset Password via Security Question</div>
++                            <div style="margin-bottom:12px">
++                                <div
++                                    style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">
++                                    What is your favorite number?</div>
++                                <input id="adm-reset-answer" type="text" placeholder="Enter answer..."
++                                    autocomplete="off"
++                                    style="width:100%;padding:10px 14px;border-radius:9px;font-size:13px;background:rgba(255,255,255,0.04);border:1px solid rgba(124,58,237,0.22);color:var(--text);font-family:var(--font-mono);outline:none;transition:border-color 0.2s,box-shadow 0.2s;"
++                                    onfocus="this.style.borderColor='rgba(124,58,237,0.6)';this.style.boxShadow='0 0 0 3px rgba(124,58,237,0.1)'"
++                                    onblur="this.style.borderColor='rgba(124,58,237,0.22)';this.style.boxShadow='none'">
++                            </div>
++                            <div style="margin-bottom:12px">
++                                <div
++                                    style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">
++                                    New Password</div>
++                                <input id="adm-reset-newpass" type="password" placeholder="Enter new admin password…"
++                                    autocomplete="off"
++                                    style="width:100%;padding:10px 14px;border-radius:9px;font-size:13px;background:rgba(255,255,255,0.04);border:1px solid rgba(124,58,237,0.22);color:var(--text);font-family:var(--font-mono);outline:none;transition:border-color 0.2s,box-shadow 0.2s;"
++                                    onfocus="this.style.borderColor='rgba(124,58,237,0.6)';this.style.boxShadow='0 0 0 3px rgba(124,58,237,0.1)'"
++                                    onblur="this.style.borderColor='rgba(124,58,237,0.22)';this.style.boxShadow='none'">
++                            </div>
++                            <button onclick="admResetPassword()"
++                                style="width:100%;padding:11px;border-radius:10px;font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--violet),#9333ea);border:none;color:#fff;cursor:pointer;font-family:var(--font-mono);transition:all 0.2s;position:relative;overflow:hidden;margin-bottom:10px"
++                                onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 24px rgba(124,58,237,0.5)'"
++                                onmouseout="this.style.transform='';this.style.boxShadow=''">Reset Password</button>
++                            <div style="text-align:center;font-size:10px;color:var(--text3);cursor:pointer;text-decoration:underline;"
++                                onclick="toggleResetView()">Back to Login</div>
+                         </div>
+-                        <button onclick="admLogin()"
+-                            style="width:100%;padding:11px;border-radius:10px;font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--violet),#9333ea);border:none;color:#fff;cursor:pointer;font-family:var(--font-mono);transition:all 0.2s;position:relative;overflow:hidden;"
+-                            onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 24px rgba(124,58,237,0.5)'"
+-                            onmouseout="this.style.transform='';this.style.boxShadow=''">🔑 Authenticate</button>
+-                        <div style="margin-top:14px;text-align:center;font-size:10px;color:var(--text3)">Tip: type <span
+-                                style="color:var(--lavender);font-family:var(--font-mono)">sudo admin</span> in terminal
+-                            to open</div>
+                     </div>
+                 </div>
+ 
+@@ -5059,10 +5098,13 @@
+         // Variable to track sync status
+         let backendSyncActive = false;
+ 
+-        async function syncUSERWithBackend() {
++        // Always use absolute URL so file:// protocol works too
++        const BACKEND_BASE = (window.location.protocol === 'file:') ? 'http://localhost:5000' : '';
++
++        async function syncUSERWithBackend(overridePass) {
+             try {
+-                const pass = localStorage.getItem('adm_pass') || '';
+-                const res = await fetch('/api/user', {
++                const pass = overridePass || localStorage.getItem('adm_pass') || '';
++                const res = await fetch(BACKEND_BASE + '/api/user', {
+                     method: 'POST',
+                     headers: {
+                         'Content-Type': 'application/json',
+@@ -5086,11 +5128,11 @@
+             }
+         }
+ 
+-        function saveUSER() {
++        function saveUSER(overridePass) {
+             try {
+                 localStorage.setItem(USER_KEY, JSON.stringify(USER));
+                 // Fire background backend sync
+-                syncUSERWithBackend();
++                syncUSERWithBackend(overridePass);
+             } catch (e) {
+                 console.warn('Save failed', e);
+             }
+@@ -5118,7 +5160,7 @@
+ 
+             // 2. Fetch from Backend MongoDB in the background
+             try {
+-                const res = await fetch('/api/user');
++                const res = await fetch(BACKEND_BASE + '/api/user');
+                 const d = await res.json();
+                 if (d.success && d.user) {
+                     backendSyncActive = true;
+@@ -5672,8 +5714,9 @@
+             const extras = USER.extras || [];
+ 
+             const timelineHTML = edu.map((e, i) => {
++                const gradeDisplay = e.cgpa || e.gpa || e.grade || '';
+                 const badgesHTML = [
+-                    e.gpa ? `<span class="edu-badge cgpa">📈 ${e.gpa}</span>` : '',
++                    gradeDisplay ? `<span class="edu-badge cgpa">📈 ${gradeDisplay}</span>` : '',
+                     e.location ? `<span class="edu-badge loc">📍 ${e.location}</span>` : '',
+                     e.link ? `<a class="edu-badge link" href="${e.link}" target="_blank" rel="noopener">🔗 Website</a>` : ''
+                 ].filter(Boolean).join('');
+@@ -7337,16 +7380,29 @@
+             const inp = document.getElementById('adm-pass-input');
+             const errEl = document.getElementById('adm-auth-err');
+             if (!inp || !errEl) return;
+-            
+-            const hashed = await hashPass(inp.value);
++
++            errEl.style.display = 'none';
++            const passVal = inp.value;
+             let isValid = false;
+-            
+-            const customPass = ADM_PASS || USER.admin_password || null;
+ 
+-            if (customPass) {
+-                if (inp.value === customPass) isValid = true;
+-            } else {
+-                if (hashed === ADM_HASH) isValid = true;
++            try {
++                const res = await fetch(BACKEND_BASE + '/api/verify-password', {
++                    method: 'POST',
++                    headers: { 'x-admin-password': passVal }
++                });
++                const d = await res.json();
++                if (res.ok && d.success) {
++                    isValid = true;
++                }
++            } catch (e) {
++                console.warn("Backend unreachable for password verification, falling back to local check");
++                const hashed = await hashPass(passVal);
++                const customPass = ADM_PASS || USER.admin_password || null;
++                if (customPass) {
++                    if (passVal === customPass) isValid = true;
++                } else {
++                    if (hashed === ADM_HASH) isValid = true;
++                }
+             }
+ 
+             if (!isValid) {
+@@ -7357,8 +7413,8 @@
+                 errEl.style.animation = 'admShake 0.3s ease';
+                 inp.value = ''; inp.focus(); return;
+             }
+-            
+-            ADM_PASS = inp.value;
++
++            ADM_PASS = passVal;
+             localStorage.setItem('adm_pass', ADM_PASS);
+             admAuthed = true; inp.value = '';
+             document.getElementById('adm-auth-gate').style.display = 'none';
+@@ -7367,6 +7423,74 @@
+             admNavTo('overview');
+         }
+ 
++        async function admResetPassword() {
++            const answerInp = document.getElementById('adm-reset-answer');
++            const newPassInp = document.getElementById('adm-reset-newpass');
++            const errEl = document.getElementById('adm-auth-err');
++            if (!answerInp || !newPassInp || !errEl) return;
++
++            const answer = answerInp.value;
++            const newPassword = newPassInp.value;
++
++            if (!answer || !newPassword) {
++                errEl.textContent = '❌ Please enter both answer and new password';
++                errEl.style.display = 'block';
++                return;
++            }
++
++            try {
++                const res = await fetch(BACKEND_BASE + '/api/reset-password', {
++                    method: 'POST',
++                    headers: { 'Content-Type': 'application/json' },
++                    body: JSON.stringify({ answer, newPassword })
++                });
++                const d = await res.json();
++                if (res.ok && d.success) {
++                    ADM_PASS = newPassword;
++                    localStorage.setItem('adm_pass', ADM_PASS);
++
++                    errEl.style.color = '#10b981';
++                    errEl.textContent = '✅ Password Reset Successful!';
++                    errEl.style.display = 'block';
++
++                    setTimeout(() => {
++                        errEl.style.color = '#ef4444';
++                        errEl.style.display = 'none';
++                        toggleResetView();
++                        admAuthed = true;
++                        document.getElementById('adm-auth-gate').style.display = 'none';
++                        document.getElementById('adm-shell').style.display = 'flex';
++                        document.getElementById('adm-session-badge').style.display = 'block';
++                        admNavTo('overview');
++                    }, 1500);
++                } else {
++                    errEl.textContent = '❌ ' + (d.error || 'Incorrect security answer');
++                    errEl.style.display = 'block';
++                    errEl.style.animation = 'none';
++                    void errEl.offsetWidth;
++                    errEl.style.animation = 'admShake 0.3s ease';
++                }
++            } catch (e) {
++                console.error("Reset failed", e);
++                errEl.textContent = '❌ Network error during reset';
++                errEl.style.display = 'block';
++            }
++        }
++
++        function toggleResetView() {
++            const loginView = document.getElementById('adm-login-view');
++            const resetView = document.getElementById('adm-reset-view');
++            const errEl = document.getElementById('adm-auth-err');
++            errEl.style.display = 'none';
++            if (loginView.style.display === 'none') {
++                loginView.style.display = 'flex';
++                resetView.style.display = 'none';
++            } else {
++                loginView.style.display = 'none';
++                resetView.style.display = 'flex';
++            }
++        }
++
+         function admLogout() {
+             admAuthed = false;
+             document.getElementById('adm-auth-gate').style.display = 'flex';
+@@ -7400,6 +7524,7 @@
+                 skills: admRenderSkills,
+                 certs: admRenderCerts,
+                 notes: admRenderNotes,
++                education: admRenderEducation,
+                 gitlog: admRenderGitLog,
+                 cmds: admRenderCmds,
+                 contact_nav: admRenderContactNav,
+@@ -7560,6 +7685,10 @@
+                     admF('Bio', '<textarea class="adm-textarea" id="pf-bio" style="min-height:100px">' + admEsc(p.bio || '') + '</textarea>') +
+                     '<div style="margin-top:12px"></div>' +
+                     admF('Resume URL', '<input class="adm-input" id="pf-resume" value="' + admEsc(p.resumeUrl || '') + '" placeholder="URL to your resume (e.g. Google Drive link)">')
++                ),
++                '<div style="margin-top:16px"></div>',
++                admCard('Security Settings',
++                    admF('Security Answer (What is your favorite number?)', '<input class="adm-input" id="pf-security-answer" value="' + admEsc(p.security_answer || '') + '" placeholder="e.g. 7">')
+                 )
+             ].join('');
+         }
+@@ -7569,6 +7698,7 @@
+             var name = get('pf-name'), role = get('pf-role'), email = get('pf-email'), phone = get('pf-phone');
+             var location = get('pf-location'), quote = get('pf-quote'), bio = get('pf-bio'), resume = get('pf-resume');
+             var github = get('pf-github'), linkedin = get('pf-linkedin');
++            var secAns = get('pf-security-answer');
+             if (name) USER.name = name;
+             if (role) USER.role = role;
+             if (email) USER.email = email;
+@@ -7577,6 +7707,7 @@
+             if (location) USER.location = location;
+             USER.quote = quote;
+             if (bio) USER.bio = bio;
++            USER.security_answer = secAns;
+             if (!USER.links) USER.links = {};
+             if (github) USER.links.github = github;
+             if (linkedin) USER.links.linkedin = linkedin;
+@@ -8056,6 +8187,86 @@
+             });
+         }
+ 
++        /* ══════════════ EDUCATION ══════════════ */
++        function admRenderEducation() {
++            var main = document.getElementById('adm-main');
++            if (!main) return;
++            var edu = USER.education || [];
++            var cards = edu.length ? edu.map(function (e, i) {
++                var grade = e.cgpa || e.gpa || e.grade || '—';
++                return '<div class="adm-card" style="display:flex;gap:14px;align-items:flex-start">' +
++                    '<div style="width:52px;height:52px;border-radius:12px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--lavender);font-family:var(--font-ui);flex-shrink:0;text-align:center;line-height:1.2">' +
++                    admEsc((e.initials || (e.school || 'E').slice(0, 3).toUpperCase())) +
++                    '</div>' +
++                    '<div style="flex:1;min-width:0">' +
++                    '<div style="font-size:13px;font-weight:700;color:var(--electric);margin-bottom:2px">' + admEsc(e.degree || '') + '</div>' +
++                    '<div style="font-size:11px;color:var(--lavender);margin-bottom:4px">🏫 ' + admEsc(e.school || '') + '</div>' +
++                    '<div style="display:flex;gap:8px;flex-wrap:wrap;font-size:10.5px;color:var(--text3)">' +
++                    (e.year ? '<span>📅 ' + admEsc(e.year) + '</span>' : '') +
++                    (grade !== '—' ? '<span>📈 ' + admEsc(grade) + '</span>' : '') +
++                    (e.location ? '<span>📍 ' + admEsc(e.location) + '</span>' : '') +
++                    '</div></div>' +
++                    '<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">' +
++                    admB('✏️ Edit', 'admEditEdu(' + i + ')', 'adm-btn-g adm-btn-sm') +
++                    admB('🗑', 'admDelEdu(' + i + ')', 'adm-btn-d adm-btn-sm') +
++                    '</div></div>';
++            }).join('') :
++                '<div style="text-align:center;padding:30px;color:var(--text3);font-size:12px">🎓 No education entries yet. Click + Add to start.</div>';
++
++            main.innerHTML =
++                '<div class="adm-page-hd">' +
++                '<div><div class="adm-page-title">🎓 Education</div>' +
++                '<div class="adm-page-sub">Manage academic history and qualifications</div></div>' +
++                admB('+ Add Entry', 'admOpenEduModal()') + '</div>' + cards;
++        }
++
++        function admOpenEduModal(idx) {
++            if (idx === undefined) idx = -1;
++            var e = idx >= 0 ? (USER.education || [])[idx] : null;
++            var body =
++                '<input type="hidden" id="em-idx" value="' + idx + '">' +
++                '<div class="adm-grid2" style="gap:11px;margin-bottom:11px">' +
++                admF('Degree / Course', '<input class="adm-input" id="em-degree" value="' + admEsc(e && e.degree || '') + '" placeholder="B.Tech — Computer Science">') +
++                admF('School / University', '<input class="adm-input" id="em-school" value="' + admEsc(e && e.school || '') + '" placeholder="KIIT University, Bhubaneswar">') +
++                admF('Year / Duration', '<input class="adm-input" id="em-year" value="' + admEsc(e && e.year || '') + '" placeholder="2021 – 2025 or YOP 2019">') +
++                admF('CGPA / Grade', '<input class="adm-input" id="em-cgpa" value="' + admEsc(e && (e.cgpa || e.gpa || e.grade) || '') + '" placeholder="8.22 / 10 or 3.5 / 4.0">') +
++                admF('Location', '<input class="adm-input" id="em-location" value="' + admEsc(e && e.location || '') + '" placeholder="Bhubaneswar, India">') +
++                admF('Initials (shown as logo)', '<input class="adm-input" id="em-initials" value="' + admEsc(e && e.initials || '') + '" placeholder="KIIT">') +
++                '</div>' +
++                admF('Website URL (optional)', '<input class="adm-input" id="em-link" value="' + admEsc(e && e.link || '') + '" placeholder="https://kiit.ac.in">');
++            admOpenModal((idx >= 0 ? '✏️ Edit' : '🎓 Add') + ' Education', body,
++                admB('💾 Save', 'admSaveEdu()') + ' ' + admB('Cancel', 'admCloseModal()', 'adm-btn-g'));
++        }
++
++        function admEditEdu(i) { admOpenEduModal(i); }
++
++        function admSaveEdu() {
++            var idx = parseInt(document.getElementById('em-idx').value);
++            var g = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
++            var entry = {
++                degree: g('em-degree') || 'Untitled Degree',
++                school: g('em-school') || '',
++                year: g('em-year') || '',
++                cgpa: g('em-cgpa') || '',
++                location: g('em-location') || '',
++                initials: g('em-initials') || '',
++                link: g('em-link') || '',
++                logo: ''
++            };
++            if (!USER.education) USER.education = [];
++            if (idx >= 0) USER.education[idx] = entry; else USER.education.push(entry);
++            saveUSER(); admCloseModal(); admRenderEducation(); admApplyToPortfolio();
++            admToast(idx >= 0 ? '✅ Education updated!' : '✅ Education entry added!');
++        }
++
++        function admDelEdu(i) {
++            var e = (USER.education || [])[i];
++            admConfirm('Delete <b style="color:var(--lavender)">"' + admEsc(e && e.degree || 'this entry') + '"</b>?', function () {
++                USER.education.splice(i, 1);
++                saveUSER(); admRenderEducation(); admApplyToPortfolio(); admToast('✅ Entry deleted');
++            });
++        }
++
+         /* ══════════════ COMMANDS ══════════════ */
+         function admRenderCmds() {
+             var main = document.getElementById('adm-main');
+@@ -8304,10 +8515,10 @@
+             var errEl = document.getElementById('sp-err');
+             var showE = function (m) { if (errEl) { errEl.textContent = m; errEl.style.display = 'block'; } };
+             if (errEl) errEl.style.display = 'none';
+-            
++
+             const hashedOld = await hashPass(old);
+             let isOldValid = false;
+-            
++
+             const customPass = ADM_PASS || USER.admin_password || null;
+             if (customPass) {
+                 if (old === customPass) isOldValid = true;
+@@ -8315,13 +8526,13 @@
+                 if (hashedOld === ADM_HASH) isOldValid = true;
+             }
+             if (!isOldValid) { showE('❌ Current password incorrect'); return; }
+-            
++
+             if (nw.length < 4) { showE('⚠️ Min 4 characters'); return; }
+             if (nw !== conf) { showE('⚠️ Passwords do not match'); return; }
+             ADM_PASS = nw;
+             localStorage.setItem('adm_pass', nw);
+             USER.admin_password = nw;
+-            saveUSER();
++            saveUSER(old);
+             admToast('✅ Password updated!');
+             document.getElementById('sp-old').value = '';
+             document.getElementById('sp-new').value = '';
+@@ -8336,10 +8547,10 @@
+             var errEl = document.getElementById('chpw-err');
+             var showE = function (m) { if (errEl) { errEl.textContent = m; errEl.style.display = 'block'; } };
+             if (errEl) errEl.style.display = 'none';
+-            
++
+             const hashedOld = await hashPass(old);
+             let isOldValid = false;
+-            
++
+             const customPass = ADM_PASS || USER.admin_password || null;
+             if (customPass) {
+                 if (old === customPass) isOldValid = true;
+@@ -8347,17 +8558,17 @@
+                 if (hashedOld === ADM_HASH) isOldValid = true;
+             }
+             if (!isOldValid) { showE('❌ Current password incorrect'); return; }
+-            
++
+             if (nw.length < 4) { showE('⚠️ Min 4 characters'); return; }
+             if (nw !== conf) { showE('⚠️ Passwords do not match'); return; }
+             ADM_PASS = nw;
+             localStorage.setItem('adm_pass', nw);
+             USER.admin_password = nw;
+-            saveUSER();
+-            
++            saveUSER(old);
++
+             var overlay = document.getElementById('chpw-overlay');
+             if (overlay) document.body.removeChild(overlay);
+-            
++
+             termFocus();
+             if (typeof appendLine === 'function') {
+                 appendLine(`<span class="green">✓ Admin password updated successfully!</span>`);
+diff --git a/server.js b/server.js
+index 0fe3c8e..59645cd 100644
+--- a/server.js
++++ b/server.js
+@@ -12,17 +12,14 @@ app.use(cors());
+ app.use(express.json({ limit: '50mb' })); // Allow large payloads for base64 images
+ 
+ // Serve static frontend files
+-app.use(express.static(path.join(__dirname)));
++app.use(express.static(path.join(__dirname, 'frontend', 'dist')));
+ 
+ // MongoDB Connection with fallback
+ const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/portfolioos';
+ let isDbConnected = false;
+ 
+ console.log('[Backend] Connecting to MongoDB at:', MONGO_URI);
+-mongoose.connect(MONGO_URI, {
+-    useNewUrlParser: true,
+-    useUnifiedTopology: true
+-})
++mongoose.connect(MONGO_URI)
+ .then(() => {
+     console.log('[Backend] Successfully connected to MongoDB.');
+     isDbConnected = true;
+@@ -87,13 +84,15 @@ app.post('/api/user', async (req, res) => {
+             if (dbDoc && dbDoc.data && dbDoc.data.admin_password) {
+                 storedPassword = String(dbDoc.data.admin_password);
+             }
+-        } else if (memoryUserCache && memoryUserCache.admin_password) {
+-            storedPassword = String(memoryUserCache.admin_password);
+         }
+         
++        // If a password is set in the database, it overrides the .env password
+         let isValid = false;
+-        if (expectedPassword && passwordHeader === expectedPassword) isValid = true;
+-        if (storedPassword && passwordHeader === storedPassword) isValid = true;
++        if (storedPassword) {
++            if (passwordHeader === storedPassword) isValid = true;
++        } else if (expectedPassword) {
++            if (passwordHeader === expectedPassword) isValid = true;
++        }
+ 
+         if (!isValid) {
+             return res.status(403).json({ success: false, error: 'Invalid admin password' });
+@@ -127,8 +126,162 @@ app.get('/api/status', (req, res) => {
+     });
+ });
+ 
++// Route: reset password via security question
++app.post('/api/reset-password', async (req, res) => {
++    try {
++        const { answer, newPassword } = req.body;
++        if (!answer || !newPassword) {
++            return res.status(400).json({ success: false, error: 'Missing answer or new password' });
++        }
++
++        let userDoc = null;
++        if (isDbConnected) {
++            userDoc = await UserConfig.findOne({ id: 'single_user' });
++        }
++        
++        let storedAnswer = "";
++        let userData = null;
++        
++        if (userDoc && userDoc.data) {
++            userData = userDoc.data;
++        } else if (memoryUserCache) {
++            userData = memoryUserCache;
++        }
++
++        if (userData && userData.security_answer) {
++            storedAnswer = String(userData.security_answer);
++        } else {
++            // Hardcoded fallback answer if none is set yet to allow recovery of an empty DB
++            storedAnswer = "7";
++        }
++
++        // Compare answer (case-insensitive, trimmed)
++        if (storedAnswer.toLowerCase().trim() !== String(answer).toLowerCase().trim()) {
++            return res.status(403).json({ success: false, error: 'Incorrect security answer' });
++        }
++
++        // Answer is correct, update password
++        if (userData) {
++            userData.admin_password = newPassword;
++        } else {
++            userData = { admin_password: newPassword, security_answer: storedAnswer };
++        }
++        
++        memoryUserCache = userData;
++
++        if (isDbConnected) {
++            await UserConfig.findOneAndUpdate(
++                { id: 'single_user' },
++                { data: userData },
++                { upsert: true, new: true }
++            );
++        }
++
++        return res.json({ success: true, msg: 'Password reset successfully' });
++    } catch (err) {
++        console.error('[Backend] POST /api/reset-password error:', err);
++        res.status(500).json({ success: false, error: err.message });
++    }
++});
++
++// Route: verify password
++app.post('/api/verify-password', async (req, res) => {
++    try {
++        const passwordHeader = req.headers['x-admin-password'];
++        if (!passwordHeader) {
++            return res.status(401).json({ success: false, error: 'Authorization password required' });
++        }
++        
++        const expectedPassword = process.env.ADMIN_PASSWORD || "";
++        
++        let storedPassword = "";
++        if (isDbConnected) {
++            const dbDoc = await UserConfig.findOne({ id: 'single_user' });
++            if (dbDoc && dbDoc.data && dbDoc.data.admin_password) {
++                storedPassword = String(dbDoc.data.admin_password);
++            }
++        }
++        
++        let isValid = false;
++        if (storedPassword) {
++            if (passwordHeader === storedPassword) isValid = true;
++        } else if (expectedPassword) {
++            if (passwordHeader === expectedPassword) isValid = true;
++        }
++
++        if (!isValid) {
++            return res.status(403).json({ success: false, error: 'Invalid admin password' });
++        }
++        
++        return res.json({ success: true });
++    } catch (err) {
++        res.status(500).json({ success: false, error: err.message });
++    }
++});
++
++// Route: change password
++app.post('/api/change-password', async (req, res) => {
++    try {
++        const passwordHeader = req.headers['x-admin-password'];
++        if (!passwordHeader) {
++            return res.status(401).json({ success: false, error: 'Authorization password required' });
++        }
++        
++        const { newPassword } = req.body;
++        if (!newPassword || newPassword.length < 6) {
++            return res.status(400).json({ success: false, error: 'New password must be at least 6 characters' });
++        }
++
++        const expectedPassword = process.env.ADMIN_PASSWORD || "";
++        
++        let storedPassword = "";
++        let userDoc = null;
++        if (isDbConnected) {
++            userDoc = await UserConfig.findOne({ id: 'single_user' });
++            if (userDoc && userDoc.data && userDoc.data.admin_password) {
++                storedPassword = String(userDoc.data.admin_password);
++            }
++        }
++        
++        let isValid = false;
++        if (storedPassword) {
++            if (passwordHeader === storedPassword) isValid = true;
++        } else if (expectedPassword) {
++            if (passwordHeader === expectedPassword) isValid = true;
++        }
++
++        if (!isValid) {
++            return res.status(403).json({ success: false, error: 'Invalid current admin password' });
++        }
++        
++        let userData = null;
++        if (userDoc && userDoc.data) {
++            userData = userDoc.data;
++        } else if (memoryUserCache) {
++            userData = memoryUserCache;
++        } else {
++            userData = {};
++        }
++
++        userData.admin_password = newPassword;
++        memoryUserCache = userData;
++
++        if (isDbConnected) {
++            await UserConfig.findOneAndUpdate(
++                { id: 'single_user' },
++                { data: userData },
++                { upsert: true, new: true }
++            );
++        }
++        
++        return res.json({ success: true, msg: 'Password updated successfully' });
++    } catch (err) {
++        res.status(500).json({ success: false, error: err.message });
++    }
++});
++
+ // Fallback to serving index.html for single page app routes
+-app.get('*', (req, res) => {
++app.use((req, res) => {
+     res.sendFile(path.join(__dirname, 'index.html'));
+ });
+ 

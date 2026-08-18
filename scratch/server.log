@@ -1,0 +1,10 @@
+◇ injected env (1) from .env // tip: ⌘ suppress logs { quiet: true }
+[Backend] PortfolioOS server running at http://localhost:5000
+[Backend] Successfully connected to MongoDB.
+[Auth] Password hash loaded from Atlas.
+[Auth] Successful login from ::1 — attempt counter cleared.
+[Auth] Successful login from ::ffff:127.0.0.1 — attempt counter cleared.
+[Auth] Successful login from ::ffff:127.0.0.1 — attempt counter cleared.
+[Auth] Password hash saved to Atlas.
+[Auth] Password changed and hashed successfully via admin panel.
+[Auth] Successful login from ::ffff:127.0.0.1 — attempt counter cleared.

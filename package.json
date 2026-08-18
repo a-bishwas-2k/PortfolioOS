@@ -1,18 +1,12 @@
 {
-  "name": "portfolioos",
+  "name": "portfolioos-workspace",
   "version": "1.0.0",
-  "main": "index.js",
+  "private": true,
+  "description": "PortfolioOS Root Monorepo Architecture",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "mongoose": "^9.6.2"
+    "start": "cd backend && npm start",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build"
   }
 }
