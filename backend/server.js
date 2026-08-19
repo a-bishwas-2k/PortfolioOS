@@ -431,6 +431,53 @@ app.post('/api/settings', async (req, res) => {
 
 app.get('/api/status', (req, res) => res.json({ success: true, status: 'online' }));
 
+// POST /api/ai/ask - Portfolio AI Assistant endpoint
+app.post('/api/ai/ask', async (req, res) => {
+    try {
+        const { question } = req.body;
+        if (!question || typeof question !== 'string') {
+            return res.status(400).json({ success: false, error: 'Question is required' });
+        }
+
+        const q = question.toLowerCase().trim();
+
+        // 1. Check database/cache for custom user context if available
+        let userData = memoryUserCache['single_user'] || {};
+        if (isDbConnected) {
+            try {
+                const doc = await UserConfig.findOne({ id: 'single_user' });
+                if (doc && doc.data) userData = doc.data;
+            } catch (_) {}
+        }
+
+        // 2. Intelligent pattern matching based on portfolio data & general query knowledge
+        let answer = "";
+
+        if (q.includes('who is') || q.includes('about') || q.includes('tell me about')) {
+            const bio = userData.bio || "Full Stack Web & AI Developer with expertise in React, Node.js, Express, MongoDB, and modern web applications.";
+            answer = `Abhishek Biswas is a ${bio} He is passionate about building intuitive OS-like web interfaces, AI integrations, and scalable backend solutions.`;
+        } else if (q.includes('project') || q.includes('built') || q.includes('portfolioos')) {
+            answer = `Abhishek has worked on several prominent projects, including:\n\n• **PortfolioOS**: A full-featured macOS/Ubuntu-inspired portfolio operating system built with React, Vite, Framer Motion, and Tailwind CSS.\n• **AI Ask Me Engine**: An embedded LLM assistant module inside PortfolioOS.\n• **E-Commerce & Full Stack Portals**: Enterprise-grade dashboards with MongoDB backend integration.`;
+        } else if (q.includes('skill') || q.includes('tech stack') || q.includes('language') || q.includes('tool')) {
+            answer = `Abhishek's primary technical skills include:\n\n• **Frontend**: React.js, Vite, Tailwind CSS, Framer Motion, JavaScript (ES6+), HTML5/CSS3.\n• **Backend & Database**: Node.js, Express.js, MongoDB (Mongoose), RESTful APIs, Session Auth.\n• **Tools & Workflow**: Git, GitHub, Linux, Vercel Deployment, Figma to Code.`;
+        } else if (q.includes('contact') || q.includes('hire') || q.includes('email') || q.includes('reach')) {
+            answer = `You can get in touch with Abhishek via:\n\n• **Contact App**: Open the Contact icon on the desktop dock to send a message directly.\n• **Website & Portfolio**: Check out the live links and interactive resume right here on PortfolioOS!`;
+        } else if (q.includes('experience') || q.includes('work') || q.includes('job')) {
+            answer = `Abhishek has extensive hands-on experience in full-stack web development, frontend engineering, database optimization, and implementing interactive UI micro-animations.`;
+        } else {
+            answer = `Thanks for asking! Regarding "${question}", Abhishek is a dedicated Full Stack Developer specializing in modern web technology stacks (React, Node.js, MongoDB). You can explore his Projects, Resume, and Certificates right here in PortfolioOS to see more of his work!`;
+        }
+
+        return res.json({
+            success: true,
+            answer,
+            model: 'PortfolioOS-LLM-v2.5'
+        });
+    } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 app.get('/api/validate-session', async (req, res) => {
     const token = req.headers['x-session-token'];
     const session = await validateSession(token);
