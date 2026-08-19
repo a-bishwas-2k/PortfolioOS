@@ -13,6 +13,7 @@ import CertificatesApp from './CertificatesApp';
 import ResumeApp from './ResumeApp';
 import ContactApp from './ContactApp';
 import SettingsApp from './SettingsApp';
+import AskMeApp from './AskMeApp';
 import PortfolioApp from './PortfolioApp';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getSocialLogo } from '../utils/icons';

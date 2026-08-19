@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useStore from '../store/useStore';
-import { FcAbout, FcFolder, FcDiploma1, FcDocument, FcCommandLine, FcContacts, FcSettings, FcGlobe } from 'react-icons/fc';
+import AppIcon from '../utils/icons';
 import { useBreakpoint } from '../utils/responsive';
 
 const dockItems = [
-  { id: 'bento', label: 'About', icon: null, FcIcon: FcAbout, color: '#60A5FA', emoji: '👤' },
-  { id: 'projects', label: 'Projects', icon: null, FcIcon: FcFolder, color: '#F472B6', emoji: '📁' },
-  { id: 'certificates', label: 'Certs', icon: null, FcIcon: FcDiploma1, color: '#FBBF24', emoji: '🏆' },
-  { id: 'resume', label: 'Resume', icon: null, FcIcon: FcDocument, color: '#34D399', emoji: '📄' },
-  { id: 'contact', label: 'Contact', icon: null, FcIcon: FcContacts, color: '#FB923C', emoji: '📞' },
-  { id: 'portfolio', label: 'Website', icon: null, FcIcon: FcGlobe, color: '#10B981', emoji: '🌐' },
-  { id: 'terminal', label: 'Terminal', icon: null, FcIcon: FcCommandLine, color: '#A78BFA', emoji: '⬛' },
-  { id: 'settings', label: 'Settings', icon: null, FcIcon: FcSettings, color: '#9CA3AF', emoji: '⚙️' },
+  { id: 'ask-me', label: 'Ask Me', color: '#8B5CF6', emoji: '🤖' },
+  { id: 'bento', label: 'About', color: '#60A5FA', emoji: '👤' },
+  { id: 'projects', label: 'Projects', color: '#F472B6', emoji: '📁' },
+  { id: 'certificates', label: 'Certs', color: '#FBBF24', emoji: '🏆' },
+  { id: 'resume', label: 'Resume', color: '#34D399', emoji: '📄' },
+  { id: 'contact', label: 'Contact', color: '#FB923C', emoji: '📞' },
+  { id: 'portfolio', label: 'Website', color: '#10B981', emoji: '🌐' },
+  { id: 'terminal', label: 'Terminal', color: '#A78BFA', emoji: '⬛' },
+  { id: 'settings', label: 'Settings', color: '#9CA3AF', emoji: '⚙️' },
 ];
 
 const Dock = () => {
@@ -235,7 +236,7 @@ const Dock = () => {
                       : '0 4px 10px rgba(0,0,0,0.25)',
                 }}
               >
-                <IconComp size={iconSize} />
+                <AppIcon appId={item.id} className="w-8 h-8 drop-shadow-md" />
                 {/* Glossy overlay */}
                 <div style={{
                   position: 'absolute',

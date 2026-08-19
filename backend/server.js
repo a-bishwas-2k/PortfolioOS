@@ -998,6 +998,38 @@ app.delete('/api/profile/delete-account', requireSession, async (req, res) => {
     }
 });
 
+// AI Assistant Endpoint ("Ask Me")
+app.post('/api/ai/ask', async (req, res) => {
+    try {
+        const { question } = req.body;
+        if (!question || typeof question !== 'string') {
+            return res.status(400).json({ success: false, error: 'Question is required' });
+        }
+
+        const qLower = question.toLowerCase();
+        let answer = "";
+
+        // Intelligence knowledge base for Abhishek's PortfolioOS
+        if (qLower.includes('who') || qLower.includes('abhishek') || qLower.includes('about') || qLower.includes('intro')) {
+            answer = "I am Abhishek Biswas, a passionate Full Stack Software Engineer & UI/UX Craftsman. I build interactive web applications, operating systems, and scalable backend services with React, Node.js, and modern cloud technologies.";
+        } else if (qLower.includes('project') || qLower.includes('work') || qLower.includes('built')) {
+            answer = "Abhishek has developed several key projects including:\n• **PortfolioOS**: A full-featured web desktop operating system with window management, custom apps, and live admin synchronization.\n• **AI Intelligence Hub**: Real-time multi-agent workflows and automated tools.\n• **Full-Stack Dashboard**: Enterprise analytics and certificate verification system.";
+        } else if (qLower.includes('skill') || qLower.includes('stack') || qLower.includes('tech') || qLower.includes('experience')) {
+            answer = "Abhishek's core tech stack includes:\n• **Frontend**: React, Vite, Framer Motion, Tailwind CSS, JavaScript/TypeScript, UI/UX Design.\n• **Backend**: Node.js, Express, REST APIs, Python.\n• **Database**: MongoDB Atlas, Redis, PostgreSQL.\n• **DevOps & Cloud**: Docker, Vercel, Render, AWS, Git/GitHub.";
+        } else if (qLower.includes('contact') || qLower.includes('email') || qLower.includes('hire') || qLower.includes('reach')) {
+            answer = "You can get in touch with Abhishek via:\n• **Email**: a.bishwas2000@gmail.com\n• **Website**: [abhishekbishwas.com.np](https://abhishekbishwas.com.np)\n• **GitHub**: [github.com/a-bishwas-2k](https://github.com/a-bishwas-2k)\n• Or open the **Contact App** right here inside PortfolioOS!";
+        } else if (qLower.includes('certificate') || qLower.includes('degree') || qLower.includes('education')) {
+            answer = "Abhishek holds degrees and certifications in Computer Science and Software Engineering. You can inspect all verified credentials in the **Certificates App** on the desktop!";
+        } else {
+            answer = `Thanks for asking! As Abhishek's AI Assistant ("Ask Me"), I can help you explore his skills, background, projects, or credentials. Feel free to ask: "What are Abhishek's top projects?", "How can I contact Abhishek?", or "What is his tech stack?"`;
+        }
+
+        res.json({ success: true, answer });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 app.post('/api/logout', (req, res) => {
     const token = req.headers['x-session-token'];
     if (token) activeSessions.delete(token);
