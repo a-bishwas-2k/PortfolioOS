@@ -431,7 +431,7 @@ app.post('/api/settings', async (req, res) => {
 
 app.get('/api/status', (req, res) => res.json({ success: true, status: 'online' }));
 
-// POST /api/ai/ask - Portfolio AI Assistant endpoint
+// POST /api/ai/ask - Comprehensive Portfolio & General Knowledge AI Assistant
 app.post('/api/ai/ask', async (req, res) => {
     try {
         const { question } = req.body;
@@ -439,9 +439,10 @@ app.post('/api/ai/ask', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Question is required' });
         }
 
-        const q = question.toLowerCase().trim();
+        const rawQ = question.trim();
+        const q = rawQ.toLowerCase();
 
-        // 1. Check database/cache for custom user context if available
+        // Fetch User Data from DB / cache for comprehensive portfolio context
         let userData = memoryUserCache['single_user'] || {};
         if (isDbConnected) {
             try {
@@ -450,28 +451,92 @@ app.post('/api/ai/ask', async (req, res) => {
             } catch (_) {}
         }
 
-        // 2. Intelligent pattern matching based on portfolio data & general query knowledge
+        // External API Helper for Live Weather
+        async function fetchWeather(city = 'Kolkata') {
+            try {
+                const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`);
+                const geoData = await geoRes.json();
+                if (geoData.results && geoData.results.length > 0) {
+                    const { latitude, longitude, name, country } = geoData.results[0];
+                    const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
+                    const wData = await wRes.json();
+                    if (wData.current_weather) {
+                        const cw = wData.current_weather;
+                        return `• **Weather in ${name}, ${country}**:\n  - **Temperature**: ${cw.temperature}°C\n  - **Wind Speed**: ${cw.windspeed} km/h\n  - **Condition**: ${cw.weathercode === 0 ? 'Clear sky ☀️' : cw.weathercode < 4 ? 'Partly Cloudy ⛅' : 'Cloudy / Rainy 🌧️'}`;
+                    }
+                }
+            } catch (_) {}
+            return `• **Current Weather**: Unable to fetch live weather details right now. Please specify a city or try again shortly.`;
+        }
+
+        // External API Helper for Wikipedia / General Knowledge
+        async function fetchWikiInfo(queryTerm) {
+            try {
+                const wikiRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(queryTerm)}`);
+                if (wikiRes.ok) {
+                    const data = await wikiRes.json();
+                    if (data.extract) {
+                        const cleanExtract = data.extract.length > 350 ? data.extract.substring(0, 350) + '...' : data.extract;
+                        return `• **Overview of ${data.title}**:\n  - ${cleanExtract}`;
+                    }
+                }
+            } catch (_) {}
+            return null;
+        }
+
         let answer = "";
 
-        if (q.includes('who is') || q.includes('about') || q.includes('tell me about')) {
-            const bio = userData.bio || "Full Stack Web & AI Developer with expertise in React, Node.js, Express, MongoDB, and modern web applications.";
-            answer = `Abhishek Biswas is a ${bio} He is passionate about building intuitive OS-like web interfaces, AI integrations, and scalable backend solutions.`;
-        } else if (q.includes('project') || q.includes('built') || q.includes('portfolioos')) {
-            answer = `Abhishek has worked on several prominent projects, including:\n\n• **PortfolioOS**: A full-featured macOS/Ubuntu-inspired portfolio operating system built with React, Vite, Framer Motion, and Tailwind CSS.\n• **AI Ask Me Engine**: An embedded LLM assistant module inside PortfolioOS.\n• **E-Commerce & Full Stack Portals**: Enterprise-grade dashboards with MongoDB backend integration.`;
-        } else if (q.includes('skill') || q.includes('tech stack') || q.includes('language') || q.includes('tool')) {
-            answer = `Abhishek's primary technical skills include:\n\n• **Frontend**: React.js, Vite, Tailwind CSS, Framer Motion, JavaScript (ES6+), HTML5/CSS3.\n• **Backend & Database**: Node.js, Express.js, MongoDB (Mongoose), RESTful APIs, Session Auth.\n• **Tools & Workflow**: Git, GitHub, Linux, Vercel Deployment, Figma to Code.`;
-        } else if (q.includes('contact') || q.includes('hire') || q.includes('email') || q.includes('reach')) {
-            answer = `You can get in touch with Abhishek via:\n\n• **Contact App**: Open the Contact icon on the desktop dock to send a message directly.\n• **Website & Portfolio**: Check out the live links and interactive resume right here on PortfolioOS!`;
-        } else if (q.includes('experience') || q.includes('work') || q.includes('job')) {
-            answer = `Abhishek has extensive hands-on experience in full-stack web development, frontend engineering, database optimization, and implementing interactive UI micro-animations.`;
-        } else {
-            answer = `Thanks for asking! Regarding "${question}", Abhishek is a dedicated Full Stack Developer specializing in modern web technology stacks (React, Node.js, MongoDB). You can explore his Projects, Resume, and Certificates right here in PortfolioOS to see more of his work!`;
+        // 1. Live Time & Date Queries
+        if (q.includes('time') || q.includes('date') || q.includes('day') || q.includes('clock')) {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+            const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            answer = `• **Current Time**: ${timeStr}\n• **Date**: ${dateStr}\n• **Timezone**: ${tz}`;
+        }
+
+        // 2. Weather Queries
+        else if (q.includes('weather') || q.includes('temperature') || q.includes('climate')) {
+            const words = q.replace(/weather|temperature|climate|in|for|the|what|is|how|like|today|current/g, ' ').trim().split(/\s+/);
+            const targetCity = words.find(w => w.length > 2) || 'Kolkata';
+            answer = await fetchWeather(targetCity);
+        }
+
+        // 3. Abhishek's Full Portfolio Details (Bio, Experience, Tech Stack, Projects, Contact, Certs)
+        else if (q.includes('who is') || q.includes('about abhishek') || q.includes('bio') || q.includes('about')) {
+            const bio = userData.bio || "Full Stack Web & AI Developer specializing in scalable MERN stack apps, interactive OS-like interfaces, and AI engine integrations.";
+            answer = `• **Name**: Abhishek Biswas\n• **Role**: Full Stack Web & AI Engineer\n• **Summary**: ${bio}\n• **Highlights**: Developer of PortfolioOS, expert in React, Node.js, Express, MongoDB, and UI micro-animations.`;
+        }
+        else if (q.includes('project') || q.includes('built') || q.includes('work') || q.includes('portfolioos')) {
+            answer = `• **Key Featured Projects**:\n  1. **PortfolioOS**: A full-featured macOS/Ubuntu-inspired portfolio operating system built with React 19, Vite, Framer Motion, and Tailwind CSS.\n  2. **Ask Me AI Assistant**: Embedded multi-functional AI model engine with live web & knowledge lookup capabilities.\n  3. **Enterprise Portals & Web Apps**: Production MongoDB REST API backends, session management, and admin dashboards.`;
+        }
+        else if (q.includes('skill') || q.includes('tech') || q.includes('stack') || q.includes('language') || q.includes('framework')) {
+            answer = `• **Frontend**: React.js, Vite, Tailwind CSS, Framer Motion, JavaScript (ES6+), HTML5/CSS3.\n• **Backend & DB**: Node.js, Express.js, MongoDB (Mongoose), RESTful APIs, Session Security, Bcrypt.\n• **DevOps & Tools**: Git, GitHub, Linux, Vercel, Postman.`;
+        }
+        else if (q.includes('contact') || q.includes('email') || q.includes('hire') || q.includes('reach') || q.includes('phone') || q.includes('social')) {
+            const email = userData.email || 'a.bishwas2000@gmail.com';
+            answer = `• **Email**: ${email}\n• **Contact App**: Open the Contact icon on the dock to send a direct message.\n• **Social Links**: Available in the About Me app and top MenuBar links.`;
+        }
+        else if (q.includes('certif') || q.includes('award') || q.includes('degree') || q.includes('education')) {
+            answer = `• **Education & Certifications**:\n  - Full Stack Web Development Certifications & Projects.\n  - Professional expertise in Web Architecture, Database Systems, and UI/UX Design.\n  - Explore the **Certificates** app on the dock to view full credentials.`;
+        }
+
+        // 4. History, General Knowledge, Science & Concepts (via Wikipedia API + Fallbacks)
+        else {
+            const cleanQuery = rawQ.replace(/^(what is|who is|tell me about|explain|how does|search|where is|when was|define|meaning of)\s+/i, '').trim();
+            const wikiAnswer = await fetchWikiInfo(cleanQuery || rawQ);
+            
+            if (wikiAnswer) {
+                answer = wikiAnswer;
+            } else {
+                answer = `• **Response for "${rawQ}"**:\n  - Abhishek Biswas is a Full Stack Developer building cutting-edge web applications like PortfolioOS.\n  - For specific inquiries, ask about Abhishek's **Projects**, **Tech Stack**, **Contact Info**, **Live Time**, or **Weather**!`;
+            }
         }
 
         return res.json({
             success: true,
             answer,
-            model: 'PortfolioOS-LLM-v2.5'
+            model: 'PortfolioOS-GoogleAI-v3.0'
         });
     } catch (err) {
         return res.status(500).json({ success: false, error: err.message });

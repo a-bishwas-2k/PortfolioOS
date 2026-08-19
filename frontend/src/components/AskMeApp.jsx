@@ -139,7 +139,32 @@ export default function AskMeApp() {
                   : 'bg-slate-800/80 border border-slate-700/60 text-slate-200 rounded-tl-none shadow-lg'
               }`}
             >
-              <div className="whitespace-pre-wrap">{msg.text}</div>
+              <div className="space-y-1.5 text-xs leading-relaxed">
+                {msg.text.split('\n').map((line, idx) => {
+                  const renderFormattedText = (txt) => {
+                    const parts = txt.split(/(\*\*.*?\*\*)/g);
+                    return parts.map((part, i) => {
+                      if (part.startsWith('**') && part.endsWith('**')) {
+                        return <strong key={i} className="font-semibold text-indigo-200">{part.slice(2, -2)}</strong>;
+                      }
+                      return part;
+                    });
+                  };
+
+                  if (line.startsWith('• ') || line.startsWith('- ')) {
+                    return (
+                      <div key={idx} className="flex gap-2 items-start pl-1">
+                        <span className="text-indigo-400 font-bold select-none">•</span>
+                        <div className="flex-1">{renderFormattedText(line.slice(2))}</div>
+                      </div>
+                    );
+                  }
+
+                  if (!line.trim()) return <div key={idx} className="h-1" />;
+
+                  return <div key={idx}>{renderFormattedText(line)}</div>;
+                })}
+              </div>
               <div className="flex items-center justify-between mt-2 pt-1 border-t border-white/10 text-[10px] text-slate-400">
                 <span>{msg.timestamp}</span>
                 {msg.sender === 'ai' && (
@@ -199,7 +224,7 @@ export default function AskMeApp() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask anything about Abhishek..."
+            placeholder="Ask about weather, history, time, or Abhishek..."
             className="flex-1 bg-transparent text-xs text-white placeholder-slate-400 focus:outline-none"
           />
           <button
