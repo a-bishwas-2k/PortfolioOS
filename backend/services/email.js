@@ -1,44 +1,13 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-let transporter;
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-async function initTransporter() {
-    if (process.env.SMTP_HOST) {
-        transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST,
-            port: process.env.SMTP_PORT,
-            secure: process.env.SMTP_PORT == 465, // true for 465, false for other ports
-            auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS,
-            },
-            family: 4,
-        });
-        console.log('[Email Service] Production SMTP configured.');
-    } else {
-        console.log('[Email Service] No SMTP config found. Generating Ethereal test account...');
-        let testAccount = await nodemailer.createTestAccount();
-        transporter = nodemailer.createTransport({
-            host: "smtp.ethereal.email",
-            port: 587,
-            secure: false, // true for 465, false for other ports
-            auth: {
-                user: testAccount.user, // generated ethereal user
-                pass: testAccount.pass, // generated ethereal password
-            },
-            family: 4,
-        });
-        console.log('[Email Service] Ethereal test account ready.');
-    }
-}
-
-initTransporter().catch(console.error);
+// Use your verified domain here once set up in Resend.
+// Until you verify a custom domain, Resend only lets you send
+// from onboarding@resend.dev to your OWN account's email for testing.
+const FROM_ADDRESS = process.env.RESEND_FROM || 'PortfolioOS Admin <onboarding@resend.dev>';
 
 async function sendOTP(to, otp, purpose) {
-    if (!transporter) {
-        await initTransporter();
-    }
-
     let subject = 'Your PortfolioOS Verification Code';
     let html = `<h1>Your OTP is: ${otp}</h1><p>It expires in 10 minutes.</p>`;
 
@@ -65,19 +34,19 @@ async function sendOTP(to, otp, purpose) {
     }
 
     try {
-        let info = await transporter.sendMail({
-            from: process.env.SMTP_USER ? `"PortfolioOS Admin" <${process.env.SMTP_USER}>` : '"PortfolioOS Admin" <admin@portfolioos.local>',
+        const { data, error } = await resend.emails.send({
+            from: FROM_ADDRESS,
             to,
             subject,
             html,
         });
 
-        console.log(`[Email Service] Sent OTP to ${to} for ${purpose}`);
-
-        // If we are using Ethereal, log the preview URL to the console
-        if (!process.env.SMTP_HOST) {
-            console.log('[Email Service] 📧 View Email in Browser: %s', nodemailer.getTestMessageUrl(info));
+        if (error) {
+            console.error('[Email Service] Resend error:', error);
+            throw new Error(error.message || 'Failed to send email via Resend');
         }
+
+        console.log(`[Email Service] Sent OTP to ${to} for ${purpose} (id: ${data?.id})`);
     } catch (error) {
         console.error('[Email Service] Error sending email:', error);
         throw error;
