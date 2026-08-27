@@ -36,13 +36,16 @@ app.use((req, res, next) => {
     next();
 });
 
-const PROD_ORIGIN = process.env.PROD_ORIGIN || null;
+const PROD_ORIGINS = (process.env.PROD_ORIGIN || '')
+    .split(',')
+    .map(o => o.trim())
+    .filter(Boolean);
 
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin) return callback(null, true);
         if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return callback(null, true);
-        if (PROD_ORIGIN && origin === PROD_ORIGIN) return callback(null, true);
+        if (PROD_ORIGINS.includes(origin)) return callback(null, true);
         return callback(new Error('CORS policy violation'), false);
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -126,12 +129,12 @@ async function validateSession(token) {
     if (session) {
         if (session.expires < Date.now()) {
             activeSessions.delete(token);
-            if (isDbConnected) Session.deleteOne({ token }).catch(() => {});
+            if (isDbConnected) Session.deleteOne({ token }).catch(() => { });
             return null;
         }
         session.expires = Date.now() + SESSION_DURATION_MS;
         if (isDbConnected) {
-            Session.updateOne({ token }, { expiresAt: new Date(session.expires) }).catch(() => {});
+            Session.updateOne({ token }, { expiresAt: new Date(session.expires) }).catch(() => { });
         }
         return session;
     }
@@ -149,7 +152,7 @@ async function validateSession(token) {
                 await dbSession.save();
                 return restored;
             }
-        } catch (_) {}
+        } catch (_) { }
     }
     return null;
 }
@@ -189,14 +192,14 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/portfolioo
 let isDbConnected = false;
 
 mongoose.connect(MONGO_URI)
-.then(async () => {
-    console.log('[Backend] Successfully connected to MongoDB.');
-    isDbConnected = true;
-    await initializePasswordIfNeeded();
-})
-.catch(err => {
-    console.error('[Backend] MongoDB connection failed.', err.message);
-});
+    .then(async () => {
+        console.log('[Backend] Successfully connected to MongoDB.');
+        isDbConnected = true;
+        await initializePasswordIfNeeded();
+    })
+    .catch(err => {
+        console.error('[Backend] MongoDB connection failed.', err.message);
+    });
 
 const UserSchemaConfig = new mongoose.Schema({
     id: { type: String, default: 'single_user' },
@@ -257,12 +260,12 @@ async function saveNewPasswordHash(plaintext) {
                 adminUser.accessPinHash = hash;
                 await adminUser.save();
             }
-            
+
             const adminIds = ['single_user'];
             if (adminUser && adminUser.mailId) {
                 adminIds.push(adminUser.mailId);
             }
-            
+
             for (const id of adminIds) {
                 let doc = await UserConfig.findOne({ id });
                 if (doc) {
@@ -296,7 +299,7 @@ async function initializePasswordIfNeeded() {
         if (seedPw && seedPw.trim()) {
             await saveNewPasswordHash(seedPw);
         }
-    } catch (err) {}
+    } catch (err) { }
 }
 
 function generateOtpCode() {
@@ -309,7 +312,7 @@ function generateOtpCode() {
 app.get('/api/user', async (req, res) => {
     try {
         let mailId = req.headers['x-mail-id'];
-        
+
         if (isDbConnected) {
             // If no specific mailId passed, look up admin user's mailId
             if (!mailId) {
@@ -335,7 +338,7 @@ app.get('/api/user', async (req, res) => {
                     profileExtras.displayName = userRecord.displayName || null;
                     profileExtras.avatar = userRecord.avatar || null;
                 }
-            } catch (_) {}
+            } catch (_) { }
 
             let config = await UserConfig.findOne({ id: mailId });
             // Fallback 1: Try single_user if custom mailId config not found
@@ -400,7 +403,7 @@ app.post('/api/settings', async (req, res) => {
                 if (adminUser && adminUser.mailId && adminUser.mailId !== 'single_user') {
                     mailId = adminUser.mailId;
                 }
-            } catch (_) {}
+            } catch (_) { }
         }
         if (!mailId) mailId = 'single_user';
 
@@ -448,7 +451,7 @@ app.post('/api/ai/ask', async (req, res) => {
             try {
                 const doc = await UserConfig.findOne({ id: 'single_user' });
                 if (doc && doc.data) userData = doc.data;
-            } catch (_) {}
+            } catch (_) { }
         }
 
         // External API Helper for Live Weather
@@ -465,7 +468,7 @@ app.post('/api/ai/ask', async (req, res) => {
                         return `• **Weather in ${name}, ${country}**:\n  - **Temperature**: ${cw.temperature}°C\n  - **Wind Speed**: ${cw.windspeed} km/h\n  - **Condition**: ${cw.weathercode === 0 ? 'Clear sky ☀️' : cw.weathercode < 4 ? 'Partly Cloudy ⛅' : 'Cloudy / Rainy 🌧️'}`;
                     }
                 }
-            } catch (_) {}
+            } catch (_) { }
             return `• **Current Weather**: Unable to fetch live weather details right now. Please specify a city or try again shortly.`;
         }
 
@@ -480,7 +483,7 @@ app.post('/api/ai/ask', async (req, res) => {
                         return `• **Overview of ${data.title}**:\n  - ${cleanExtract}`;
                     }
                 }
-            } catch (_) {}
+            } catch (_) { }
             return null;
         }
 
@@ -525,7 +528,7 @@ app.post('/api/ai/ask', async (req, res) => {
         else {
             const cleanQuery = rawQ.replace(/^(what is|who is|tell me about|explain|how does|search|where is|when was|define|meaning of)\s+/i, '').trim();
             const wikiAnswer = await fetchWikiInfo(cleanQuery || rawQ);
-            
+
             if (wikiAnswer) {
                 answer = wikiAnswer;
             } else {
@@ -547,10 +550,10 @@ app.get('/api/validate-session', async (req, res) => {
     const token = req.headers['x-session-token'];
     const session = await validateSession(token);
     if (!session) return res.json({ valid: false });
-    
+
     let displayName = session.isAdmin ? 'Sudo Admin' : session.mailId;
     let avatar = '';
-    
+
     if (isDbConnected) {
         try {
             if (session.isAdmin && session.mailId === 'single_user') {
@@ -567,9 +570,9 @@ app.get('/api/validate-session', async (req, res) => {
                     avatar = user.avatar || '';
                 }
             }
-        } catch (_) {}
+        } catch (_) { }
     }
-    
+
     return res.json({ valid: true, mailId: session.mailId, isAdmin: session.isAdmin, displayName, avatar });
 });
 
@@ -579,7 +582,7 @@ app.put('/api/profile/update', requireSession, async (req, res) => {
         const { displayName, avatar } = req.body;
         let mailId = req.session.mailId;
         let user = await User.findOne({ mailId });
-        
+
         if (!user && req.session.isAdmin) {
             user = await User.findOne({ accountType: 'admin' });
             if (!user) {
@@ -594,7 +597,7 @@ app.put('/api/profile/update', requireSession, async (req, res) => {
                 });
             }
         }
-        
+
         if (!user) return res.status(404).json({ success: false, error: 'User not found' });
         if (displayName !== undefined) user.displayName = String(displayName).trim();
         if (avatar !== undefined) user.avatar = avatar;
@@ -613,17 +616,17 @@ app.post('/api/auth/send-otp', rateLimitAuth, async (req, res) => {
     try {
         const { mailId, purpose } = req.body;
         if (!mailId || !purpose) return res.status(400).json({ success: false, error: 'Missing mailId or purpose' });
-        
+
         const otpCode = generateOtpCode();
         const otpHash = await bcrypt.hash(otpCode, 10);
-        
+
         await Otp.create({
             mailId: mailId.toLowerCase(),
             otpHash,
             purpose,
             expiresAt: new Date(Date.now() + 10 * 60 * 1000)
         });
-        
+
         await sendOTP(mailId, otpCode, purpose);
         console.log('[DEBUG] OTP generated:', otpCode, 'for purpose:', purpose);
         res.json({ success: true, msg: 'OTP sent successfully' });
@@ -636,19 +639,19 @@ app.post('/api/auth/register', rateLimitAuth, async (req, res) => {
     try {
         const { mailId, displayName, pin, otp } = req.body;
         if (!mailId || !pin || !otp || !displayName) return res.status(400).json({ success: false, error: 'Missing fields' });
-        
+
         const otpRecord = await Otp.findOne({ mailId: mailId.toLowerCase(), purpose: 'register', isUsed: false, expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 });
         if (!otpRecord) return res.status(400).json({ success: false, error: 'Invalid or expired OTP' });
-        
+
         const isValid = await bcrypt.compare(otp.toString(), otpRecord.otpHash);
         if (!isValid) return res.status(400).json({ success: false, error: 'Invalid OTP' });
-        
+
         otpRecord.isUsed = true;
         await otpRecord.save();
-        
+
         const existing = await User.findOne({ mailId: mailId.toLowerCase() });
         if (existing) return res.status(400).json({ success: false, error: 'User already exists' });
-        
+
         const accessPinHash = await bcrypt.hash(pin.toString(), 10);
         const user = await User.create({
             mailId: mailId.toLowerCase(),
@@ -658,9 +661,9 @@ app.post('/api/auth/register', rateLimitAuth, async (req, res) => {
             verifiedAt: new Date(),
             accountType: 'user'
         });
-        
+
         await UserConfig.create({ id: user.mailId, data: {} });
-        
+
         const token = createSession(user.mailId, false);
         res.json({ success: true, sessionToken: token, user: { mailId: user.mailId, displayName: user.displayName } });
     } catch (err) {
@@ -671,11 +674,11 @@ app.post('/api/auth/register', rateLimitAuth, async (req, res) => {
 app.post('/api/auth/login', rateLimitAuth, async (req, res) => {
     try {
         const { mailId, pin } = req.body;
-        
+
         if (!mailId || mailId === 'admin') {
             const passwordHeader = req.headers['x-admin-password'] || pin;
             if (!passwordHeader) return res.status(401).json({ success: false, error: 'PIN required' });
-            
+
             const isValid = await verifyPassword(passwordHeader);
             if (!isValid) {
                 recordFailedAttempt(req._authIP);
@@ -697,19 +700,19 @@ app.post('/api/auth/login', rateLimitAuth, async (req, res) => {
                         adminDisplayName = adminUser.displayName || 'Sudo Admin';
                         adminAvatar = adminUser.avatar || '';
                     }
-                } catch (_) {}
+                } catch (_) { }
             }
             const token = createSession(adminMailId, true);
             return res.json({ success: true, sessionToken: token, user: { mailId: adminMailId, isAdmin: true, displayName: adminDisplayName, avatar: adminAvatar } });
         }
-        
+
         const user = await User.findOne({ mailId: mailId.toLowerCase() });
         if (!user) return res.status(403).json({ success: false, error: 'Invalid credentials' });
-        
+
         if (user.lockedUntil && user.lockedUntil > new Date()) {
             return res.status(429).json({ success: false, error: 'Account locked. Try again later.' });
         }
-        
+
         const isValid = await bcrypt.compare(pin.toString(), user.accessPinHash);
         if (!isValid) {
             user.failedAttempts += 1;
@@ -721,12 +724,12 @@ app.post('/api/auth/login', rateLimitAuth, async (req, res) => {
             recordFailedAttempt(req._authIP);
             return res.status(403).json({ success: false, error: 'Invalid credentials' });
         }
-        
+
         user.failedAttempts = 0;
         user.lockedUntil = null;
         user.lastLogin = new Date();
         await user.save();
-        
+
         recordSuccessfulLogin(req._authIP);
         const token = createSession(user.mailId, user.accountType === 'admin');
         res.json({ success: true, sessionToken: token, user: { mailId: user.mailId, displayName: user.displayName, isAdmin: user.accountType === 'admin' } });
@@ -739,16 +742,16 @@ app.post('/api/auth/verify-otp', requireSession, async (req, res) => {
     try {
         const { otp, purpose } = req.body;
         const mailId = req.session.mailId === 'single_user' ? req.body.mailId : req.session.mailId;
-        
+
         const otpRecord = await Otp.findOne({ mailId: mailId.toLowerCase(), purpose, isUsed: false, expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 });
         if (!otpRecord) return res.status(400).json({ success: false, error: 'Invalid or expired OTP' });
-        
+
         const isValid = await bcrypt.compare(otp.toString(), otpRecord.otpHash);
         if (!isValid) return res.status(400).json({ success: false, error: 'Invalid OTP' });
-        
+
         otpRecord.isUsed = true;
         await otpRecord.save();
-        
+
         res.json({ success: true, msg: 'OTP verified' });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -759,16 +762,16 @@ app.post('/api/auth/reset-pin', rateLimitAuth, async (req, res) => {
     try {
         const { mailId, otp, newPin } = req.body;
         if (!mailId || !otp || !newPin || newPin.length < 4) return res.status(400).json({ success: false, error: 'Invalid input' });
-        
+
         const otpRecord = await Otp.findOne({ mailId: mailId.toLowerCase(), purpose: { $in: ['reset_pin', 'change_pin'] }, isUsed: false, expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 });
         if (!otpRecord) return res.status(400).json({ success: false, error: 'Invalid or expired OTP' });
-        
+
         const isValid = await bcrypt.compare(otp.toString(), otpRecord.otpHash);
         if (!isValid) return res.status(400).json({ success: false, error: 'Invalid OTP' });
-        
+
         otpRecord.isUsed = true;
         await otpRecord.save();
-        
+
         let isForAdmin = mailId === 'single_user' || mailId === 'admin';
         let user = null;
         if (!isForAdmin) {
@@ -777,7 +780,7 @@ app.post('/api/auth/reset-pin', rateLimitAuth, async (req, res) => {
                 isForAdmin = true;
             }
         }
-        
+
         if (isForAdmin) {
             await saveNewPasswordHash(newPin);
         } else {
@@ -788,7 +791,7 @@ app.post('/api/auth/reset-pin', rateLimitAuth, async (req, res) => {
             user.accessPinHash = await bcrypt.hash(newPin.toString(), 10);
             await user.save();
         }
-        
+
         res.json({ success: true, msg: 'PIN reset successfully' });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -869,21 +872,21 @@ app.post('/api/profile/send-change-email-otp', requireSession, async (req, res) 
         if (!user && req.session.isAdmin) {
             user = await User.findOne({ accountType: 'admin' });
         }
-        
+
         if (!user || user.mailId === 'single_user') {
             return res.json({ success: true, notLinked: true, msg: 'No email linked yet. Skipping old email verification.' });
         }
-        
+
         const otpCode = generateOtpCode();
         const otpHash = await bcrypt.hash(otpCode, 10);
-        
+
         await Otp.create({
             mailId: user.mailId,
             otpHash,
             purpose: 'change_email_old',
             expiresAt: new Date(Date.now() + 10 * 60 * 1000)
         });
-        
+
         await sendOTP(user.mailId, otpCode, 'change_email_old');
         res.json({ success: true, msg: 'OTP sent to current email address.' });
     } catch (err) {
@@ -896,33 +899,33 @@ app.post('/api/profile/verify-change-email-old', requireSession, async (req, res
     try {
         const { otp } = req.body;
         if (!otp) return res.status(400).json({ success: false, error: 'OTP is required' });
-        
+
         let mailId = req.session.mailId;
         let user = await User.findOne({ mailId });
         if (!user && req.session.isAdmin) {
             user = await User.findOne({ accountType: 'admin' });
         }
-        
+
         if (!user || user.mailId === 'single_user') {
             req.session.oldEmailVerified = true;
             return res.json({ success: true, msg: 'No email linked yet. Verification skipped.' });
         }
-        
+
         const otpRecord = await Otp.findOne({
             mailId: user.mailId,
             purpose: 'change_email_old',
             isUsed: false,
             expiresAt: { $gt: new Date() }
         }).sort({ createdAt: -1 });
-        
+
         if (!otpRecord) return res.status(400).json({ success: false, error: 'Invalid or expired OTP' });
-        
+
         const isValid = await bcrypt.compare(otp.toString(), otpRecord.otpHash);
         if (!isValid) return res.status(400).json({ success: false, error: 'Invalid OTP' });
-        
+
         otpRecord.isUsed = true;
         await otpRecord.save();
-        
+
         req.session.oldEmailVerified = true;
         res.json({ success: true, msg: 'Current email verified.' });
     } catch (err) {
@@ -935,36 +938,36 @@ app.post('/api/profile/send-new-email-otp', requireSession, async (req, res) => 
     try {
         const { newEmail } = req.body;
         if (!newEmail || !newEmail.trim()) return res.status(400).json({ success: false, error: 'New email is required' });
-        
+
         const cleanNewEmail = newEmail.trim().toLowerCase();
-        
+
         let currentMailId = req.session.mailId;
         let currentUserRecord = await User.findOne({ mailId: currentMailId });
         if (!currentUserRecord && req.session.isAdmin) {
             currentUserRecord = await User.findOne({ accountType: 'admin' });
         }
-        
+
         if (currentUserRecord && currentUserRecord.mailId !== 'single_user') {
             if (!req.session.oldEmailVerified) {
                 return res.status(400).json({ success: false, error: 'Please verify your current email first.' });
             }
         }
-        
+
         const existingUser = await User.findOne({ mailId: cleanNewEmail });
         if (existingUser && (!currentUserRecord || existingUser._id.toString() !== currentUserRecord._id.toString())) {
             return res.status(400).json({ success: false, error: 'Email is already linked to another account.' });
         }
-        
+
         const otpCode = generateOtpCode();
         const otpHash = await bcrypt.hash(otpCode, 10);
-        
+
         await Otp.create({
             mailId: cleanNewEmail,
             otpHash,
             purpose: 'change_email_new',
             expiresAt: new Date(Date.now() + 10 * 60 * 1000)
         });
-        
+
         await sendOTP(cleanNewEmail, otpCode, 'change_email_new');
         res.json({ success: true, msg: 'OTP sent to new email address.' });
     } catch (err) {
@@ -977,42 +980,42 @@ app.post('/api/profile/confirm-change-email', requireSession, async (req, res) =
     try {
         const { newEmail, otp } = req.body;
         if (!newEmail || !otp) return res.status(400).json({ success: false, error: 'Missing required fields' });
-        
+
         const cleanNewEmail = newEmail.trim().toLowerCase();
-        
+
         let currentMailId = req.session.mailId;
         let currentUserRecord = await User.findOne({ mailId: currentMailId });
         if (!currentUserRecord && req.session.isAdmin) {
             currentUserRecord = await User.findOne({ accountType: 'admin' });
         }
-        
+
         if (currentUserRecord && currentUserRecord.mailId !== 'single_user') {
             if (!req.session.oldEmailVerified) {
                 return res.status(400).json({ success: false, error: 'Please verify your current email first.' });
             }
         }
-        
+
         const otpRecord = await Otp.findOne({
             mailId: cleanNewEmail,
             purpose: 'change_email_new',
             isUsed: false,
             expiresAt: { $gt: new Date() }
         }).sort({ createdAt: -1 });
-        
+
         if (!otpRecord) return res.status(400).json({ success: false, error: 'Invalid or expired OTP' });
-        
+
         const isValid = await bcrypt.compare(otp.toString(), otpRecord.otpHash);
         if (!isValid) return res.status(400).json({ success: false, error: 'Invalid OTP' });
-        
+
         otpRecord.isUsed = true;
         await otpRecord.save();
-        
+
         const accessPinHash = await getStoredHash();
         if (currentUserRecord) {
             const oldId = currentUserRecord.mailId;
             currentUserRecord.mailId = cleanNewEmail;
             await currentUserRecord.save();
-            
+
             const config = await UserConfig.findOne({ id: oldId });
             if (config) {
                 config.id = cleanNewEmail;
@@ -1030,7 +1033,7 @@ app.post('/api/profile/confirm-change-email', requireSession, async (req, res) =
                 verifiedAt: new Date(),
                 accountType: 'admin'
             });
-            
+
             const config = await UserConfig.findOne({ id: 'single_user' });
             if (config) {
                 config.id = cleanNewEmail;
@@ -1040,14 +1043,14 @@ app.post('/api/profile/confirm-change-email', requireSession, async (req, res) =
                 await UserConfig.create({ id: cleanNewEmail, data: {} });
             }
         }
-        
+
         req.session.mailId = cleanNewEmail;
         delete req.session.oldEmailVerified;
-        
+
         // Issue a fresh session token with the new mailId so the client
         // can persist it — this survives server restarts correctly.
         const newSessionToken = createSession(cleanNewEmail, req.session.isAdmin || false);
-        
+
         res.json({
             success: true,
             msg: 'Email linked/changed successfully.',
