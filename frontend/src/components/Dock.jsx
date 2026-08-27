@@ -5,7 +5,6 @@ import AppIcon from '../utils/icons';
 import { useBreakpoint } from '../utils/responsive';
 
 const dockItems = [
-  { id: 'ask-me', label: 'Ask Me', color: '#8B5CF6', emoji: '🤖' },
   { id: 'bento', label: 'About', color: '#60A5FA', emoji: '👤' },
   { id: 'projects', label: 'Projects', color: '#F472B6', emoji: '📁' },
   { id: 'certificates', label: 'Certs', color: '#FBBF24', emoji: '🏆' },

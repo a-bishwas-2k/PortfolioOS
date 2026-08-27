@@ -49,16 +49,6 @@ export const getSocialLogo = (platform) => {
 
 /* ─── Realistic & Detailed Custom SVG Brand App Icons ───────────────── */
 
-export const AskMeIcon = ({ size = 32, className = '' }) => (
-  <div
-    className={`relative flex items-center justify-center rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-500 to-pink-500 shadow-lg shadow-indigo-500/30 border border-white/20 overflow-hidden group ${className}`}
-    style={{ width: size, height: size }}
-  >
-    <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.4),transparent_60%)]" />
-    <Sparkles className="w-1/2 h-1/2 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] animate-pulse" />
-  </div>
-);
-
 export const PortfolioIcon = ({ size = 32, className = '' }) => (
   <div
     className={`relative flex items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 via-cyan-500 to-teal-400 shadow-lg shadow-blue-500/30 border border-white/20 overflow-hidden ${className}`}
@@ -153,8 +143,6 @@ export const BentoIcon = ({ size = 32, className = '' }) => (
 export default function AppIcon({ appId, id, size = 32, className = '' }) {
   const targetId = appId || id;
   switch (targetId) {
-    case 'ask-me':
-      return <AskMeIcon size={size} className={className} />;
     case 'portfolio':
       return <PortfolioIcon size={size} className={className} />;
     case 'resume':
@@ -174,6 +162,6 @@ export default function AppIcon({ appId, id, size = 32, className = '' }) {
     case 'bento':
       return <BentoIcon size={size} className={className} />;
     default:
-      return <AskMeIcon size={size} className={className} />;
+      return <TerminalIcon size={size} className={className} />;
   }
 }
