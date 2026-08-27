@@ -2,10 +2,8 @@ const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Use your verified domain here once set up in Resend.
-// Until you verify a custom domain, Resend only lets you send
-// from onboarding@resend.dev to your OWN account's email for testing.
-const FROM_ADDRESS = process.env.RESEND_FROM || 'PortfolioOS Admin <onboarding@resend.dev>';
+// Verified domain in Resend - can now send to any recipient.
+const FROM_ADDRESS = process.env.RESEND_FROM || 'PortfolioOS Admin <admin@mail.abhishekbishwas.com.np>';
 
 async function sendOTP(to, otp, purpose) {
     let subject = 'Your PortfolioOS Verification Code';
