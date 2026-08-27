@@ -182,7 +182,7 @@ function generalRateLimit(req, res, next) {
 
 app.use('/api', generalRateLimit);
 app.use(express.json({ limit: '50mb' }));
-app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist')));
+// Frontend is deployed on Vercel — no static file serving needed here.
 
 // MongoDB Connection
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/portfolioos';
@@ -1155,12 +1155,9 @@ app.post('/api/clear-lockout', (req, res) => {
     return res.json({ success: true, cleared: hadRecord, ip });
 });
 
+// 404 handler for unknown API routes
 app.use((req, res) => {
-    const indexPath = path.join(__dirname, '..', 'frontend', 'dist', 'index.html');
-    const fallback = path.join(__dirname, '..', 'archive', 'index.html');
-    const fs = require('fs');
-    if (fs.existsSync(indexPath)) res.sendFile(indexPath);
-    else res.sendFile(fallback);
+    res.status(404).json({ success: false, error: 'API route not found' });
 });
 
 app.listen(PORT, () => {
