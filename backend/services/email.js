@@ -12,6 +12,7 @@ async function initTransporter() {
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS,
             },
+            family: 4,
         });
         console.log('[Email Service] Production SMTP configured.');
     } else {
@@ -25,6 +26,7 @@ async function initTransporter() {
                 user: testAccount.user, // generated ethereal user
                 pass: testAccount.pass, // generated ethereal password
             },
+            family: 4,
         });
         console.log('[Email Service] Ethereal test account ready.');
     }
@@ -36,10 +38,10 @@ async function sendOTP(to, otp, purpose) {
     if (!transporter) {
         await initTransporter();
     }
-    
+
     let subject = 'Your PortfolioOS Verification Code';
     let html = `<h1>Your OTP is: ${otp}</h1><p>It expires in 10 minutes.</p>`;
-    
+
     if (purpose === 'register') {
         subject = 'Verify Your PortfolioOS Account';
     } else if (purpose === 'reset_pin') {
@@ -69,9 +71,9 @@ async function sendOTP(to, otp, purpose) {
             subject,
             html,
         });
-        
+
         console.log(`[Email Service] Sent OTP to ${to} for ${purpose}`);
-        
+
         // If we are using Ethereal, log the preview URL to the console
         if (!process.env.SMTP_HOST) {
             console.log('[Email Service] 📧 View Email in Browser: %s', nodemailer.getTestMessageUrl(info));
