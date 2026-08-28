@@ -56,7 +56,7 @@ const buildHref = (type, value) => {
     const emailStr = value.startsWith('mailto:') ? value.replace('mailto:', '') : value;
     return `https://mail.google.com/mail/?view=cm&fs=1&to=${emailStr}`;
   }
-  if (type === 'phone') return value.startsWith('tel:') ? value : `tel:${value}`;
+  if (type === 'phone' || type === 'location') return '#';
   if (value.startsWith('http') || value.startsWith('mailto:') || value.startsWith('tel:')) return value;
   return `https://${value}`;
 };
@@ -133,9 +133,9 @@ const ContactCard = ({ contact, idx }) => {
           fontSize: 'var(--fs-sm)', fontFamily: 'JetBrains Mono, monospace',
           fontWeight: 600, color: 'var(--text)',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          textTransform: 'capitalize'
+          textTransform: ['email', 'gmail', 'phone', 'location'].includes(contact.type) ? 'none' : 'capitalize'
         }}>
-          {contact.label || contact.type}
+          {['email', 'gmail', 'phone', 'location'].includes(contact.type) ? contact.value : (contact.label || contact.type)}
         </div>
       </div>
     </motion.a>
