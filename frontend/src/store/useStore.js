@@ -303,24 +303,8 @@ const useStore = create((set, get) => ({
     }
   },
 
-  register: async (mailId, displayName, pin, otp) => {
-    try {
-      const res = await fetch(`${BACKEND_BASE}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mailId, displayName, pin, otp })
-      });
-      const data = await res.json();
-      if (data.success && data.sessionToken) {
-        persistSession(data.sessionToken, 3600 * 1000);
-        const cu = { ...data.user, displayName: data.user.displayName || data.user.mailId, avatar: data.user.avatar || '' };
-        set({ adminAuthed: true, currentUser: cu });
-        return { ok: true };
-      }
-      return { ok: false, error: data.error || 'Registration failed.' };
-    } catch {
-      return { ok: false, error: 'Cannot reach server.' };
-    }
+  register: async () => {
+    return { ok: false, error: 'Registration is disabled on this system.' };
   },
 
   sendOtp: async (mailId, purpose) => {

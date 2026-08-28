@@ -309,17 +309,15 @@ const PinStepUpModal = ({ isOpen, onClose, onSuccess, title = 'Confirm Identity'
   );
 };
 
-/* ─── Auth Gate (Login / Register / Forgot PIN) ────── */
+/* ─── Auth Gate (Admin Single-User Login / Reset PIN) ────── */
 const AuthGate = ({ onAuth }) => {
-  const [mode, setMode] = useState('login');
+  const [mode, setMode] = useState('login'); // 'login' | 'forgot'
   const [step, setStep] = useState(1);
   const [mailId, setMailId] = useState('');
   const [pin, setPin] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [otp, setOtp] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [avatarData, setAvatarData] = useState(null); // { avatar, displayName }
-  const [avatarFetching, setAvatarFetching] = useState(false);
 
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
@@ -331,42 +329,29 @@ const AuthGate = ({ onAuth }) => {
   const [lockCountdown, setLockCountdown] = useState(0);
   const countdownRef = useRef(null);
 
-  const { login, register, sendOtp, resetPin } = useStore();
+  const { login, sendOtp, resetPin } = useStore();
 
-  // Fetch user avatar/name when email is entered on login mode
   const BACKEND_BASE_GATE = (window.location.protocol === 'file:') ? 'http://localhost:5000' : (import.meta.env.VITE_API_URL || '');
-  const fetchUserPreview = React.useCallback(async (email) => {
-    if (mode !== 'login') { setAvatarData(null); return; }
-    setAvatarFetching(true);
+  
+  // Auto-fetch admin profile preview on mount
+  const fetchAdminPreview = React.useCallback(async () => {
     try {
-      // For 'admin' keyword or empty, fetch the admin/single_user profile
-      const lookupId = (!email || email === 'admin') ? 'single_user' : email.toLowerCase();
-      const res = await fetch(`${BACKEND_BASE_GATE}/api/user`, { headers: { 'x-mail-id': lookupId } });
+      const res = await fetch(`${BACKEND_BASE_GATE}/api/user`, { headers: { 'x-mail-id': 'single_user' } });
       const data = await res.json();
-      if (data.success && data.user && (data.user.avatar || data.user.displayName)) {
-        setAvatarData({ avatar: data.user.avatar || '', displayName: data.user.displayName || email || 'Admin' });
-      } else { setAvatarData(null); }
-    } catch { setAvatarData(null); }
-    setAvatarFetching(false);
-  }, [mode, BACKEND_BASE_GATE]);
+      if (data.success && data.user) {
+        setAvatarData({ 
+          avatar: data.user.avatar || '', 
+          displayName: data.user.displayName || 'Admin' 
+        });
+      }
+    } catch { 
+      setAvatarData(null); 
+    }
+  }, [BACKEND_BASE_GATE]);
 
-  // Auto-load admin preview on mount (so avatar shows without typing)
   React.useEffect(() => {
-    if (mode === 'login') fetchUserPreview('');
-  }, [mode]);
-
-  // Debounced email preview
-  const emailPreviewTimer = React.useRef(null);
-  const handleMailIdChange = (val) => {
-    setMailId(val);
-    clearTimeout(emailPreviewTimer.current);
-    if (!val || val === 'admin') {
-      // Show admin preview for empty or 'admin' keyword
-      emailPreviewTimer.current = setTimeout(() => fetchUserPreview(val), 300);
-    } else if (val.includes('@')) {
-      emailPreviewTimer.current = setTimeout(() => fetchUserPreview(val.trim()), 600);
-    } else { setAvatarData(null); }
-  };
+    fetchAdminPreview();
+  }, [fetchAdminPreview]);
 
   React.useEffect(() => {
     if (lockCountdown > 0) {
@@ -378,64 +363,6 @@ const AuthGate = ({ onAuth }) => {
     return () => clearTimeout(countdownRef.current);
   }, [lockCountdown, lockedOut]);
 
-  const handleSendOtp = async (e) => {
-    e.preventDefault();
-    if (!mailId.trim()) { setErr('Mail ID required'); return; }
-    if (mode === 'register' && (!displayName.trim() || !pin.trim())) { setErr('All fields required'); return; }
-    if (mode === 'forgot' && !pin.trim()) { setErr('New PIN required'); return; }
-
-    setLoading(true); setErr(''); setMsg('');
-    const purpose = mode === 'register' ? 'register' : 'reset_pin';
-    const res = await sendOtp(mailId, purpose);
-    setLoading(false);
-    
-    if (res.ok) {
-      setStep(2);
-      setMsg('OTP sent to your email.');
-    } else {
-      setErr(res.error || 'Failed to send OTP');
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true); setErr(''); setMsg('');
-    
-    if (mode === 'login') {
-      const res = await login(mailId || 'admin', pin);
-      setLoading(false);
-      if (res.ok) {
-        onAuth();
-      } else if (res.lockedOut) {
-        setLockedOut(true);
-        setLockCountdown(res.waitSeconds || 120);
-      } else {
-        setErr(res.error || 'Login failed.');
-        setPin('');
-      }
-    } else if (mode === 'register') {
-      const res = await register(mailId, displayName, pin, otp);
-      setLoading(false);
-      if (res.ok) onAuth();
-      else setErr(res.error || 'Registration failed.');
-    } else if (mode === 'forgot') {
-      const res = await resetPin(mailId, otp, pin);
-      setLoading(false);
-      if (res.ok) {
-        setMode('login');
-        setStep(1);
-        setPin('');
-        setOtp('');
-        setMsg('PIN reset successful. Please login.');
-      } else {
-        setErr(res.error || 'Reset failed.');
-      }
-    }
-  };
-
-  const formatCountdown = (s) => s >= 60 ? `${Math.ceil(s / 60)}m ${s % 60}s` : `${s}s`;
-
-  // Trigger shake + error bar on error
   const triggerError = (msg) => {
     setErr(msg);
     setShake(true);
@@ -444,12 +371,10 @@ const AuthGate = ({ onAuth }) => {
 
   const handleSendOtpWithShake = async (e) => {
     e.preventDefault();
-    if (!mailId.trim()) { triggerError('Mail ID required'); return; }
-    if (mode === 'register' && (!displayName.trim() || !pin.trim())) { triggerError('All fields required'); return; }
-    if (mode === 'forgot' && !pin.trim()) { triggerError('New PIN required'); return; }
+    if (!mailId.trim()) { triggerError('Registered Email required to receive OTP'); return; }
+    if (!pin.trim()) { triggerError('New PIN required'); return; }
     setLoading(true); setErr(''); setMsg('');
-    const purpose = mode === 'register' ? 'register' : 'reset_pin';
-    const res = await sendOtp(mailId, purpose);
+    const res = await sendOtp(mailId, 'reset_pin');
     setLoading(false);
     if (res.ok) { setStep(2); setMsg('OTP sent to your email.'); }
     else triggerError(res.error || 'Failed to send OTP');
@@ -459,44 +384,26 @@ const AuthGate = ({ onAuth }) => {
     e.preventDefault();
     setLoading(true); setErr(''); setMsg('');
     if (mode === 'login') {
-      const res = await login(mailId || 'admin', pin);
+      if (!pin.trim()) { triggerError('Please enter your Access PIN'); setLoading(false); return; }
+      const res = await login('admin', pin);
       setLoading(false);
       if (res.ok) { onAuth(); }
       else if (res.lockedOut) { setLockedOut(true); setLockCountdown(res.waitSeconds || 120); }
-      else { triggerError(res.error || 'Login failed.'); setPin(''); }
-    } else if (mode === 'register') {
-      const res = await register(mailId, displayName, pin, otp);
-      setLoading(false);
-      if (res.ok) onAuth();
-      else triggerError(res.error || 'Registration failed.');
+      else { triggerError(res.error || 'Invalid Admin PIN'); setPin(''); }
     } else if (mode === 'forgot') {
       const res = await resetPin(mailId, otp, pin);
       setLoading(false);
-      if (res.ok) { setMode('login'); setStep(1); setPin(''); setOtp(''); setMsg('PIN reset. Please login.'); }
+      if (res.ok) { setMode('login'); setStep(1); setPin(''); setOtp(''); setMsg('PIN reset successfully. Please login.'); }
       else triggerError(res.error || 'Reset failed.');
     }
   };
 
-  const modeIcon = lockedOut ? '🔒' : mode === 'register' ? '✨' : mode === 'forgot' ? '🔑' : null;
-  const modeTitle = lockedOut ? 'Locked Out' : mode === 'login' ? 'Welcome Back' : mode === 'register' ? 'Create Account' : 'Reset PIN';
-
-  // Remove unused vars (kept for logic compat)
-  void modeIcon; void modeTitle;
+  const formatCountdown = (s) => s >= 60 ? `${Math.ceil(s / 60)}m ${s % 60}s` : `${s}s`;
 
   return (
     <div style={{ display: 'flex', height: '100%', background: 'var(--window-bg)', position: 'relative', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
       {/* Background animated bars */}
       <AnimatedBars active={inputActive} error={shake} />
-
-      {/* ── LEFT BRANDING PANEL (hidden on very small height) ── */}
-      <div style={{
-        display: 'none',
-        position: 'absolute', left: 0, top: 0, bottom: 0, width: '42%',
-        flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        padding: '32px',
-        background: 'linear-gradient(160deg, rgba(124,58,237,0.12) 0%, rgba(79,70,229,0.06) 100%)',
-        borderRight: '1px solid rgba(124,58,237,0.15)',
-      }} />
 
       <motion.div
         animate={shake ? { x: [-8, 8, -6, 6, -4, 4, 0] } : { x: 0 }}
@@ -535,7 +442,9 @@ const AuthGate = ({ onAuth }) => {
               <div style={{ width: 76, height: 76, borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(124,58,237,0.5)', boxShadow: '0 0 30px rgba(124,58,237,0.35), 0 0 0 4px rgba(124,58,237,0.1)' }}>
                 <img src={avatarData.avatar} alt={avatarData.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)', fontFamily: 'Syne,sans-serif' }}>{avatarData.displayName}</div>
+              <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text)', fontFamily: 'Syne,sans-serif' }}>
+                {avatarData.displayName || 'Admin'}
+              </div>
             </motion.div>
           ) : (
             <motion.div
@@ -546,18 +455,17 @@ const AuthGate = ({ onAuth }) => {
                 width: 60, height: 60, borderRadius: '18px', fontSize: '26px',
                 background: lockedOut
                   ? 'linear-gradient(135deg,rgba(239,68,68,0.2),rgba(239,68,68,0.08))'
-                  : mode === 'register'
-                    ? 'linear-gradient(135deg,rgba(74,222,128,0.2),rgba(74,222,128,0.08))'
-                    : 'linear-gradient(135deg,rgba(124,58,237,0.25),rgba(79,70,229,0.12))',
+                  : 'linear-gradient(135deg,rgba(124,58,237,0.25),rgba(79,70,229,0.12))',
                 border: `1px solid ${lockedOut ? 'rgba(239,68,68,0.3)' : 'rgba(124,58,237,0.3)'}`,
                 boxShadow: `0 0 24px ${lockedOut ? 'rgba(239,68,68,0.2)' : 'rgba(124,58,237,0.2)'}`,
               }}
             >
-              {lockedOut ? '🔒' : mode === 'register' ? '✨' : mode === 'forgot' ? '🔑' : '🔐'}
+              {lockedOut ? '🔒' : mode === 'forgot' ? '🔑' : '🔐'}
             </motion.div>
           )}
+          
           <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: '18px', color: 'var(--text)', marginTop: '12px', marginBottom: '3px' }}>
-            {modeTitle}
+            {lockedOut ? 'Locked Out' : mode === 'login' ? (avatarData?.displayName ? `Welcome Back` : 'Admin Access') : 'Reset PIN'}
           </div>
           <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: '10px', color: 'var(--text3)', letterSpacing: '3px', textTransform: 'uppercase' }}>
             PortfolioOS Admin
@@ -567,10 +475,10 @@ const AuthGate = ({ onAuth }) => {
         {/* Mode Tabs */}
         {!lockedOut && step === 1 && (
           <div style={{ display: 'flex', gap: '3px', marginBottom: '22px', background: 'rgba(0,0,0,0.3)', padding: '3px', borderRadius: '10px' }}>
-            {[{id:'login',label:'Sign In'},{id:'register',label:'Sign Up'},{id:'forgot',label:'Reset'}].map(t => (
+            {[{id:'login',label:'Sign In'},{id:'forgot',label:'Reset PIN'}].map(t => (
               <button
                 key={t.id}
-                onClick={() => { setMode(t.id); setErr(''); setMsg(''); setShake(false); }}
+                onClick={() => { setMode(t.id); setStep(1); setErr(''); setMsg(''); setShake(false); }}
                 style={{
                   flex: 1, padding: '7px 4px', border: 'none', borderRadius: '8px',
                   fontSize: '11px', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700,
@@ -603,74 +511,65 @@ const AuthGate = ({ onAuth }) => {
             <AnimatePresence mode="wait">
               {step === 1 ? (
                 <motion.div key="step1" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                  style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
-                  {/* Email field with label */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '10px', fontFamily: 'JetBrains Mono,monospace', color: 'var(--text3)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '5px', textAlign: 'left' }}>
-                      {mode === 'login' ? 'Email / Username' : 'Email Address'}
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', pointerEvents: 'none', opacity: 0.7 }}>📧</span>
-                      <input
-                        type="text" value={mailId} onChange={e => handleMailIdChange(e.target.value)}
-                        placeholder={mode === 'login' ? 'Email or "admin"' : 'your@email.com'} className="adm-input"
-                        onFocus={() => setInputActive(true)} onBlur={() => setInputActive(false)}
-                        style={{ paddingLeft: '36px', fontSize: '13px', textAlign: 'left' }}
-                      />
-                    </div>
-                  </div>
-                  {mode === 'register' && (
+                  style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
+                  
+                  {/* Email field (only in Reset PIN mode) */}
+                  {mode === 'forgot' && (
                     <div>
-                      <label style={{ display: 'block', fontSize: '10px', fontFamily: 'JetBrains Mono,monospace', color: 'var(--text3)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '5px', textAlign: 'left' }}>Display Name</label>
+                      <label style={{ display: 'block', fontSize: '10px', fontFamily: 'JetBrains Mono,monospace', color: 'var(--text3)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '5px', textAlign: 'left' }}>
+                        Registered Email Address
+                      </label>
                       <div style={{ position: 'relative' }}>
-                        <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', pointerEvents: 'none', opacity: 0.7 }}>👤</span>
+                        <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', pointerEvents: 'none', opacity: 0.7 }}>📧</span>
                         <input
-                          type="text" value={displayName} onChange={e => setDisplayName(e.target.value)}
-                          placeholder="Your Name" className="adm-input"
+                          type="email" value={mailId} onChange={e => setMailId(e.target.value)}
+                          placeholder="your.email@domain.com" className="adm-input"
                           onFocus={() => setInputActive(true)} onBlur={() => setInputActive(false)}
                           style={{ paddingLeft: '36px', fontSize: '13px', textAlign: 'left' }}
                         />
                       </div>
                     </div>
                   )}
-                  {/* PIN field with label */}
+
+                  {/* Access PIN Field */}
                   <div>
                     <label style={{ display: 'block', fontSize: '10px', fontFamily: 'JetBrains Mono,monospace', color: 'var(--text3)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '5px', textAlign: 'left' }}>
-                      {mode === 'forgot' ? 'New PIN' : 'Access PIN'}
+                      {mode === 'forgot' ? 'New Access PIN' : 'Access PIN'}
                     </label>
                     <div style={{ position: 'relative' }}>
-                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', pointerEvents: 'none', opacity: 0.7 }}>🔑</span>
-                    <input
-                      type={showPin ? 'text' : 'password'} value={pin} onChange={e => setPin(e.target.value)}
-                      placeholder={mode === 'forgot' ? 'Set a new PIN' : '••••••••'} className="adm-input"
-                      onFocus={() => setInputActive(true)} onBlur={() => setInputActive(false)}
-                      style={{ paddingLeft: '36px', paddingRight: '42px', letterSpacing: showPin ? '2px' : '4px', fontSize: '14px', textAlign: 'left' }}
-                    />
-                    <button type="button" onClick={() => setShowPin(v => !v)}
-                      style={{
-                        position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
-                        background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px',
-                        opacity: 0.5, padding: '2px', lineHeight: 1,
-                      }}
-                      title={showPin ? 'Hide PIN' : 'Show PIN'}
-                    >
-                      {showPin ? '🙈' : '👁️'}
-                    </button>
+                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', pointerEvents: 'none', opacity: 0.7 }}>🔑</span>
+                      <input
+                        type={showPin ? 'text' : 'password'} value={pin} onChange={e => setPin(e.target.value)}
+                        placeholder={mode === 'forgot' ? 'Set a new PIN' : '••••••••'} className="adm-input" autoFocus
+                        onFocus={() => setInputActive(true)} onBlur={() => setInputActive(false)}
+                        style={{ paddingLeft: '36px', paddingRight: '42px', letterSpacing: showPin ? '2px' : '4px', fontSize: '14px', textAlign: 'left' }}
+                      />
+                      <button type="button" onClick={() => setShowPin(v => !v)}
+                        style={{
+                          position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+                          background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px',
+                          opacity: 0.5, padding: '2px', lineHeight: 1,
+                        }}
+                        title={showPin ? 'Hide PIN' : 'Show PIN'}
+                      >
+                        {showPin ? '🙈' : '👁️'}
+                      </button>
+                    </div>
+
+                    {mode === 'login' && (
+                      <div style={{ textAlign: 'right', marginTop: '6px' }}>
+                        <button type="button"
+                          onClick={() => { setMode('forgot'); setStep(1); setErr(''); setMsg(''); }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', color: 'var(--text3)', fontFamily: 'JetBrains Mono,monospace', textDecoration: 'underline', transition: 'color 0.2s' }}
+                          onMouseEnter={e => e.currentTarget.style.color = 'var(--lavender)'}
+                          onMouseLeave={e => e.currentTarget.style.color = 'var(--text3)'}
+                        >
+                          Forgot PIN? Reset via OTP →
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  {mode === 'login' && (
-                   <div style={{ textAlign: 'right', marginTop: '5px' }}>
-                   <button type="button"
-                   onClick={() => { setMode('forgot'); setErr(''); setMsg(''); }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', color: 'var(--text3)', fontFamily: 'JetBrains Mono,monospace', textDecoration: 'underline', transition: 'color 0.2s' }}
-                  onMouseEnter={e => e.currentTarget.style.color = 'var(--lavender)'}
-                  onMouseLeave={e => e.currentTarget.style.color = 'var(--text3)'}
-                  >
-                   Forgot PIN? Reset it →
-                  </button>
-                  </div>
-                  )}
-                  </div>
-                  </motion.div>
+                </motion.div>
               ) : (
                 <motion.div key="step2" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
                   style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
@@ -732,8 +631,7 @@ const AuthGate = ({ onAuth }) => {
                 </span>
               ) : (
                 step === 1 && mode !== 'login' ? 'Send OTP →' :
-                mode === 'login' ? 'Sign In →' :
-                mode === 'register' ? 'Create Account →' : 'Reset PIN →'
+                mode === 'login' ? 'Sign In →' : 'Reset PIN →'
               )}
             </motion.button>
           </form>
@@ -742,6 +640,7 @@ const AuthGate = ({ onAuth }) => {
     </div>
   );
 };
+
 
 /* ─── Profile Section ────────────────────────────── */
 const ProfileSection = ({ user, onSave }) => {

@@ -619,6 +619,7 @@ app.post('/api/auth/send-otp', rateLimitAuth, async (req, res) => {
     try {
         const { mailId, purpose } = req.body;
         if (!mailId || !purpose) return res.status(400).json({ success: false, error: 'Missing mailId or purpose' });
+        if (purpose === 'register') return res.status(403).json({ success: false, error: 'Registration is disabled on this system' });
 
         const otpCode = generateOtpCode();
         const otpHash = await bcrypt.hash(otpCode, 10);
@@ -639,39 +640,7 @@ app.post('/api/auth/send-otp', rateLimitAuth, async (req, res) => {
 });
 
 app.post('/api/auth/register', rateLimitAuth, async (req, res) => {
-    try {
-        const { mailId, displayName, pin, otp } = req.body;
-        if (!mailId || !pin || !otp || !displayName) return res.status(400).json({ success: false, error: 'Missing fields' });
-
-        const otpRecord = await Otp.findOne({ mailId: mailId.toLowerCase(), purpose: 'register', isUsed: false, expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 });
-        if (!otpRecord) return res.status(400).json({ success: false, error: 'Invalid or expired OTP' });
-
-        const isValid = await bcrypt.compare(otp.toString(), otpRecord.otpHash);
-        if (!isValid) return res.status(400).json({ success: false, error: 'Invalid OTP' });
-
-        otpRecord.isUsed = true;
-        await otpRecord.save();
-
-        const existing = await User.findOne({ mailId: mailId.toLowerCase() });
-        if (existing) return res.status(400).json({ success: false, error: 'User already exists' });
-
-        const accessPinHash = await bcrypt.hash(pin.toString(), 10);
-        const user = await User.create({
-            mailId: mailId.toLowerCase(),
-            displayName,
-            accessPinHash,
-            isVerified: true,
-            verifiedAt: new Date(),
-            accountType: 'user'
-        });
-
-        await UserConfig.create({ id: user.mailId, data: {} });
-
-        const token = createSession(user.mailId, false);
-        res.json({ success: true, sessionToken: token, user: { mailId: user.mailId, displayName: user.displayName } });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
+    return res.status(403).json({ success: false, error: 'Registration is disabled on this system' });
 });
 
 app.post('/api/auth/login', rateLimitAuth, async (req, res) => {
