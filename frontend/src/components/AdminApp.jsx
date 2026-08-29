@@ -836,7 +836,12 @@ const ContactsSection = ({ user, onSave }) => {
         <div style={{ display: 'flex', gap: '10px' }}>
           <Btn onClick={addContact}>＋ Add Entry</Btn>
           <Btn
-            onClick={() => onSave({ ...user, contacts })}
+            onClick={() => {
+              const email = contacts.find(c => c.type === 'email')?.value || '';
+              const phone = contacts.find(c => c.type === 'phone')?.value || '';
+              const location = contacts.find(c => c.type === 'location')?.value || '';
+              onSave({ ...user, contacts, email, phone, location });
+            }}
             style={{ flex: 1, background: 'rgba(124,58,237,0.18)', fontWeight: 700 }}
           >
             💾 Save Contact App
@@ -1750,6 +1755,200 @@ const TerminalSection = ({ user, onSave }) => {
 
 
 
+/* ─── Wallpaper Section ──────────────────────────── */
+const WallpaperSection = () => {
+  const { settings, saveSettings } = useStore();
+  const [urlInput, setUrlInput] = useState(settings.wallpaper || '');
+  const [preview, setPreview] = useState(settings.wallpaper || '');
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState('');
+  const [tab, setTab] = useState('url'); // 'url' | 'upload'
+  const fileRef = useRef();
+
+  const handleUrlChange = (val) => {
+    setUrlInput(val);
+    setPreview(val);
+  };
+
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const b64 = await toBase64(file);
+    setUrlInput(b64);
+    setPreview(b64);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setStatus('');
+    const ok = await saveSettings({ wallpaper: urlInput });
+    setSaving(false);
+    if (ok) {
+      setStatus('✅ Wallpaper saved to database!');
+    } else {
+      setStatus('❌ Save failed — check your session.');
+    }
+    setTimeout(() => setStatus(''), 4000);
+  };
+
+  const handleClear = async () => {
+    setSaving(true);
+    setStatus('');
+    setUrlInput('');
+    setPreview('');
+    const ok = await saveSettings({ wallpaper: '' });
+    setSaving(false);
+    setStatus(ok ? '✅ Wallpaper cleared' : '❌ Failed to clear');
+    setTimeout(() => setStatus(''), 3000);
+  };
+
+  return (
+    <div>
+      <SectionTitle>Wallpaper</SectionTitle>
+
+      {/* Info Banner */}
+      <div style={{
+        padding: '12px 16px', marginBottom: '20px',
+        background: 'rgba(124,58,237,0.06)',
+        border: '1px solid rgba(124,58,237,0.2)',
+        borderRadius: '10px',
+        fontSize: 'var(--fs-xs)', color: 'var(--text3)',
+        fontFamily: 'JetBrains Mono, monospace', lineHeight: 1.6,
+      }}>
+        🖼️ Set the desktop background for your portfolio. Changes are saved to the database and will be visible on all devices and browsers.
+      </div>
+
+      {/* Tab switcher */}
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '18px', background: 'rgba(0,0,0,0.3)', padding: '4px', borderRadius: '10px', width: 'fit-content' }}>
+        {[{ id: 'url', label: '🔗 Paste URL' }, { id: 'upload', label: '📁 Upload Image' }].map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            padding: '7px 16px', border: 'none', borderRadius: '7px',
+            fontSize: 'var(--fs-xs)', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700,
+            cursor: 'pointer', transition: 'all 0.2s',
+            background: tab === t.id ? 'linear-gradient(135deg, rgba(124,58,237,0.35), rgba(79,70,229,0.25))' : 'transparent',
+            color: tab === t.id ? 'var(--lavender)' : 'var(--text3)',
+          }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* URL Input */}
+      {tab === 'url' && (
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', fontSize: 'var(--fs-xs)', color: 'var(--text3)', fontFamily: 'JetBrains Mono, monospace', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+            Image URL
+          </label>
+          <Input
+            type="url"
+            placeholder="https://example.com/your-wallpaper.jpg"
+            value={urlInput.startsWith('data:') ? '' : urlInput}
+            onChange={e => handleUrlChange(e.target.value)}
+            style={{ width: '100%', maxWidth: '520px' }}
+          />
+          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', fontFamily: 'JetBrains Mono, monospace', marginTop: '4px' }}>
+            Paste any direct image URL (jpg, png, gif, webp)
+          </div>
+        </div>
+      )}
+
+      {/* Upload Input */}
+      {tab === 'upload' && (
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', fontSize: 'var(--fs-xs)', color: 'var(--text3)', fontFamily: 'JetBrains Mono, monospace', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+            Upload from device
+          </label>
+          <div
+            onClick={() => fileRef.current?.click()}
+            style={{
+              border: '2px dashed rgba(124,58,237,0.4)',
+              borderRadius: '12px', padding: '28px',
+              textAlign: 'center', cursor: 'pointer',
+              background: 'rgba(124,58,237,0.04)',
+              transition: 'border-color 0.2s, background 0.2s',
+              maxWidth: '400px',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.09)'; e.currentTarget.style.borderColor = 'rgba(124,58,237,0.7)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.04)'; e.currentTarget.style.borderColor = 'rgba(124,58,237,0.4)'; }}
+          >
+            <div style={{ fontSize: '32px', marginBottom: '8px' }}>📂</div>
+            <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text2)', fontFamily: 'Syne, sans-serif', fontWeight: 600, marginBottom: '4px' }}>
+              {urlInput.startsWith('data:') ? '✅ Image loaded — click to change' : 'Click to browse image'}
+            </div>
+            <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', fontFamily: 'JetBrains Mono, monospace' }}>
+              JPG, PNG, WEBP, GIF supported
+            </div>
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleUpload} />
+          <div style={{ fontSize: 'var(--fs-xs)', color: 'rgba(245,158,11,0.8)', fontFamily: 'JetBrains Mono, monospace', marginTop: '8px' }}>
+            ⚠ Uploaded images are stored as base64 in the database. Keep files under 2MB for best performance.
+          </div>
+        </div>
+      )}
+
+      {/* Live Preview */}
+      {preview && (
+        <div style={{ marginBottom: '18px' }}>
+          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text3)', fontFamily: 'JetBrains Mono, monospace', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+            Live Preview
+          </div>
+          <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)', height: '200px', maxWidth: '520px', background: '#000' }}>
+            <img
+              src={preview}
+              alt="Wallpaper Preview"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }}
+              onError={e => { e.target.style.display = 'none'; }}
+            />
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0,
+              background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)',
+              padding: '10px 14px',
+              fontSize: 'var(--fs-xs)', color: 'rgba(255,255,255,0.8)',
+              fontFamily: 'JetBrains Mono, monospace',
+            }}>
+              Desktop Preview
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <Btn
+          onClick={handleSave}
+          style={{ padding: '10px 20px', fontWeight: 700, opacity: saving ? 0.6 : 1 }}
+        >
+          {saving ? '⏳ Saving...' : '💾 Save Wallpaper'}
+        </Btn>
+        {(urlInput || preview) && (
+          <Btn danger onClick={handleClear} style={{ opacity: saving ? 0.6 : 1 }}>
+            🗑 Clear Wallpaper
+          </Btn>
+        )}
+      </div>
+
+      {/* Status */}
+      <AnimatePresence>
+        {status && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            style={{
+              marginTop: '12px', padding: '10px 14px',
+              background: status.startsWith('✅') ? 'rgba(74,222,128,0.08)' : 'rgba(239,68,68,0.08)',
+              border: `1px solid ${status.startsWith('✅') ? 'rgba(74,222,128,0.3)' : 'rgba(239,68,68,0.25)'}`,
+              borderRadius: '8px', fontSize: 'var(--fs-xs)',
+              color: status.startsWith('✅') ? 'var(--green)' : '#F87171',
+              fontFamily: 'JetBrains Mono, monospace',
+            }}
+          >
+            {status}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 /* ─── Main AdminApp ──────────────────────────────── */
 const SECTIONS = [
   { id: 'profile', label: '👤 Profile' },
@@ -1761,6 +1960,7 @@ const SECTIONS = [
   { id: 'facts', label: '✨ Fun Facts' },
   { id: 'gitlog', label: '🕐 Git Log' },
   { id: 'terminal', label: '💻 Terminal' },
+  { id: 'wallpaper', label: '🖼️ Wallpaper' },
   { id: 'security', label: '🔐 Security' },
 ];
 
@@ -2048,6 +2248,7 @@ const AdminApp = () => {
             {section === 'facts' && <FunFactsSection user={user || {}} onSave={handleSave} />}
             {section === 'gitlog' && <GitLogSection user={user || {}} onSave={handleSave} />}
             {section === 'terminal' && <TerminalSection user={user || {}} onSave={handleSave} />}
+            {section === 'wallpaper' && <WallpaperSection />}
             {section === 'security' && <AccountProfile onLogout={handleLogout} />}
           </motion.div>
         </AnimatePresence>

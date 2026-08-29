@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { motion } from 'framer-motion';
 import useStore from '../store/useStore';
 import { getSocialLogo } from '../utils/icons';
-import { FiDownload, FiMail, FiPhone } from 'react-icons/fi';
+import { FiDownload, FiMail, FiPhone, FiMapPin } from 'react-icons/fi';
 
 const PortfolioApp = () => {
   const { user } = useStore();
@@ -229,20 +229,29 @@ const PortfolioApp = () => {
             {user.email && (
               <motion.a 
                 whileHover={{ scale: 1.05 }}
-                href={`mailto:${user.email}`} 
+                href={`https://mail.google.com/mail/?view=cm&fs=1&to=${user.email}`} 
+                target="_blank"
+                rel="noreferrer"
                 style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '15px 30px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '15px', color: '#fff', textDecoration: 'none', backdropFilter: 'blur(10px)' }}
               >
                 <FiMail size={20} color="var(--cyan)" /> {user.email}
               </motion.a>
             )}
             {user.phone && (
-              <motion.a 
+              <motion.div 
                 whileHover={{ scale: 1.05 }}
-                href={`tel:${user.phone}`} 
                 style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '15px 30px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '15px', color: '#fff', textDecoration: 'none', backdropFilter: 'blur(10px)' }}
               >
                 <FiPhone size={20} color="var(--cyan)" /> {user.phone}
-              </motion.a>
+              </motion.div>
+            )}
+            {user.location && (
+              <motion.div 
+                whileHover={{ scale: 1.05 }}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '15px 30px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '15px', color: '#fff', textDecoration: 'none', backdropFilter: 'blur(10px)' }}
+              >
+                <FiMapPin size={20} color="var(--cyan)" /> {user.location}
+              </motion.div>
             )}
           </div>
           

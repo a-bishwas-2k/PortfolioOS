@@ -20,6 +20,7 @@ const Dock = () => {
   const [hoveredId, setHoveredId] = useState(null);
   const [contextMenuApp, setContextMenuApp] = useState(null); // { appId, x, y }
   const [isDockVisible, setIsDockVisible] = useState(true);
+  const [dockHeight, setDockHeight] = useState(140);
   const bp = useBreakpoint(); // 'mobile' | 'tablet' | 'desktop'
 
   const isMobile = bp === 'mobile';
@@ -32,37 +33,57 @@ const Dock = () => {
   const dockGap = isMobile ? 4 : isTablet ? 10 : 20;
   const dockPad = isMobile ? '8px 10px' : isTablet ? '12px 20px' : '16px 36px';
 
-  // Auto-hide dock logic — desktop only (mouse-based)
+  // How much of the dock stays peeking above the screen edge when "hidden"
+  const PEEK_PX = 14;
+
+  const dockRef = React.useRef(null);
   const isDockVisibleRef = React.useRef(isDockVisible);
+
   React.useEffect(() => {
     isDockVisibleRef.current = isDockVisible;
   }, [isDockVisible]);
 
+  // Measure the dock's real rendered height (changes across breakpoints)
+  React.useEffect(() => {
+    if (dockRef.current) {
+      const h = dockRef.current.getBoundingClientRect().height;
+      if (h > 0) setDockHeight(h);
+    }
+  }, [bp]);
+
+  // Auto-hide dock logic — desktop only (mouse-based)
   React.useEffect(() => {
     if (isSmall) return; // No auto-hide on touch devices
     let hideTimeout;
-    const handleMouseMove = (e) => {
-      const showZone = window.innerHeight - 30;
-      const dockZone = window.innerHeight - 180;
 
-      if (e.clientY >= showZone) {
+    const handleMouseMove = (e) => {
+      const measuredHeight = dockRef.current?.getBoundingClientRect().height || dockHeight;
+      const triggerZone = window.innerHeight - measuredHeight - 60; // generous approach zone
+
+      if (e.clientY >= triggerZone) {
         clearTimeout(hideTimeout);
         if (!isDockVisibleRef.current) setIsDockVisible(true);
-      } else if (e.clientY >= dockZone && isDockVisibleRef.current) {
-        clearTimeout(hideTimeout);
       } else {
         clearTimeout(hideTimeout);
         hideTimeout = setTimeout(() => {
           setIsDockVisible(false);
-        }, 250);
+        }, 400);
       }
     };
+
+    const handleMouseLeaveWindow = () => {
+      clearTimeout(hideTimeout);
+      hideTimeout = setTimeout(() => setIsDockVisible(false), 400);
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseleave', handleMouseLeaveWindow);
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseleave', handleMouseLeaveWindow);
       clearTimeout(hideTimeout);
     };
-  }, [isSmall]);
+  }, [isSmall, dockHeight]);
 
   const handleOpen = (item) => {
     window.dispatchEvent(new CustomEvent('open-app', { detail: item.id }));
@@ -92,8 +113,9 @@ const Dock = () => {
   return (
     <>
       <motion.div
+        ref={dockRef}
         initial={{ y: 0, x: '-50%' }}
-        animate={{ y: isDockVisible || isSmall ? 0 : 120, x: '-50%' }}
+        animate={{ y: isDockVisible || isSmall ? 0 : dockHeight - PEEK_PX, x: '-50%' }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className="dock"
         onMouseEnter={() => !isSmall && setIsDockVisible(true)}
@@ -291,6 +313,31 @@ const Dock = () => {
           );
         })}
       </motion.div>
+
+      {/* Peek hint — pulsing glow on the visible sliver, for first-time visitors */}
+      <AnimatePresence>
+        {!isDockVisible && !isSmall && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0.4, 0.9, 0.4] }}
+            exit={{ opacity: 0 }}
+            transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+            style={{
+              position: 'fixed',
+              bottom: '10px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '60px',
+              height: '4px',
+              borderRadius: '4px',
+              background: '#E95420',
+              boxShadow: '0 0 10px #E95420',
+              zIndex: 9989,
+              pointerEvents: 'none',
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Dock Item Context Menu (Ubuntu Style) */}
       <AnimatePresence>
