@@ -268,19 +268,17 @@ const Dock = () => {
                 }} />
               </motion.div>
 
-              {/* Label below icon — hide on mobile */}
-              {!isMobile && (
-                <div style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: isActive ? '#E95420' : 'var(--text)',
-                  fontFamily: 'Syne, sans-serif',
-                  textShadow: '0 1px 3px rgba(0,0,0,0.6)',
-                  whiteSpace: 'nowrap',
-                }}>
-                  {item.label}
-                </div>
-              )}
+              {/* Label below icon — smaller on mobile, still visible */}
+              <div style={{
+                fontSize: isMobile ? '8px' : '11px',
+                fontWeight: 600,
+                color: isActive ? '#E95420' : 'var(--text)',
+                fontFamily: 'Syne, sans-serif',
+                textShadow: '0 1px 3px rgba(0,0,0,0.6)',
+                whiteSpace: 'nowrap',
+              }}>
+                {item.label}
+              </div>
 
               {/* Ubuntu Yaru Orange Running Indicator Dot */}
               <div style={{
