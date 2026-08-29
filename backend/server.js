@@ -1130,6 +1130,10 @@ app.post('/api/clear-lockout', (req, res) => {
     return res.json({ success: true, cleared: hadRecord, ip });
 });
 
+// Lightweight health check — used by uptime pingers, no DB/profile data
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+});
 // 404 handler for unknown API routes
 app.use((req, res) => {
     res.status(404).json({ success: false, error: 'API route not found' });
