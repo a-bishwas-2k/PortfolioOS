@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useStore from '../store/useStore';
+import { useBreakpoint } from '../utils/responsive';
 
 const ProjectCard = ({ project, onOpen }) => (
   <motion.div
@@ -186,6 +187,8 @@ const ProjectsApp = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
+  const bp = useBreakpoint(); // 'mobile' | 'tablet' | 'desktop'
+  const isMobile = bp === 'mobile';
 
   const projects = user?.projects || [];
   const allTags = ['All', ...new Set(projects.flatMap(p => p.tags || []))].slice(0, 8);
@@ -197,50 +200,67 @@ const ProjectsApp = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--window-bg)' }}>
-      {/* Toolbar */}
-      <div style={{
-        padding: '12px 16px',
-        borderBottom: '1px solid var(--border)',
-        background: 'rgba(0,0,0,0.2)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        flexWrap: 'wrap',
-        flexShrink: 0,
-      }}>
-        <input
-          type="text"
-          placeholder="Search projects..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="adm-input"
-          style={{ maxWidth: '220px' }}
-        />
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', flex: 1 }}>
-          {allTags.map(tag => (
-            <button
-              key={tag}
-              onClick={() => setFilter(tag)}
-              style={{
-                padding: '5px 12px',
-                borderRadius: '99px',
-                border: `1px solid ${filter === tag ? 'rgba(124,58,237,0.5)' : 'var(--border)'}`,
-                background: filter === tag ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.03)',
-                color: filter === tag ? 'var(--lavender)' : 'var(--text3)',
-                fontSize: 'var(--fs-xs)',
-                fontFamily: 'JetBrains Mono, monospace',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-              }}
-            >
-              {tag}
-            </button>
-          ))}
+      {/* Toolbar — search + tag filters hidden on mobile, kept on tablet/desktop */}
+      {!isMobile && (
+        <div style={{
+          padding: '12px 16px',
+          borderBottom: '1px solid var(--border)',
+          background: 'rgba(0,0,0,0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          flexWrap: 'wrap',
+          flexShrink: 0,
+        }}>
+          <input
+            type="text"
+            placeholder="Search projects..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="adm-input"
+            style={{ maxWidth: '220px' }}
+          />
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', flex: 1 }}>
+            {allTags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => setFilter(tag)}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '99px',
+                  border: `1px solid ${filter === tag ? 'rgba(124,58,237,0.5)' : 'var(--border)'}`,
+                  background: filter === tag ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.03)',
+                  color: filter === tag ? 'var(--lavender)' : 'var(--text3)',
+                  fontSize: 'var(--fs-xs)',
+                  fontFamily: 'JetBrains Mono, monospace',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+          <span style={{ color: 'var(--text3)', fontSize: 'var(--fs-xs)', fontFamily: 'JetBrains Mono, monospace' }}>
+            {filtered.length} projects
+          </span>
         </div>
-        <span style={{ color: 'var(--text3)', fontSize: 'var(--fs-xs)', fontFamily: 'JetBrains Mono, monospace' }}>
-          {filtered.length} projects
-        </span>
-      </div>
+      )}
+
+      {/* Lightweight mobile header — just the project count, no search/filter clutter */}
+      {isMobile && (
+        <div style={{
+          padding: '10px 16px',
+          borderBottom: '1px solid var(--border)',
+          background: 'rgba(0,0,0,0.2)',
+          textAlign: 'center',
+          flexShrink: 0,
+        }}>
+          <span style={{ color: 'var(--text3)', fontSize: 'var(--fs-xs)', fontFamily: 'JetBrains Mono, monospace' }}>
+            {filtered.length} projects
+          </span>
+        </div>
+      )}
 
       {/* Grid */}
       <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
