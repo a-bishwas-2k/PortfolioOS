@@ -5,8 +5,8 @@
 ### A Linux-Inspired Interactive Developer Portfolio
 
 <img src="https://i.postimg.cc/vH1Hr8TD/Gemini-Generated-Image-nfqkzqnfqkzqnfqk.png" alt="PortfolioOS Banner" width="100%">
-
-
+<br>
+<br>
 
 <br>
 
