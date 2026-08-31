@@ -4,7 +4,7 @@
 
 ### A Linux-Inspired Interactive Developer Portfolio
 
-<img src="https://i.postimg.cc/P5RQT3qm/os-banner.png" alt="PortfolioOS Banner" width="100%">
+<img src="https://i.postimg.cc/vH1Hr8TD/Gemini-Generated-Image-nfqkzqnfqkzqnfqk.png" alt="PortfolioOS Banner" width="100%">
 
 <br>
 
