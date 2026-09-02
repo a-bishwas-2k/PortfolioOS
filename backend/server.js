@@ -1123,13 +1123,6 @@ app.post('/api/logout', (req, res) => {
     return res.json({ success: true });
 });
 
-app.post('/api/clear-lockout', (req, res) => {
-    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
-    const hadRecord = loginAttempts.has(ip);
-    loginAttempts.delete(ip);
-    return res.json({ success: true, cleared: hadRecord, ip });
-});
-
 // Lightweight health check — used by uptime pingers, no DB/profile data
 app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
