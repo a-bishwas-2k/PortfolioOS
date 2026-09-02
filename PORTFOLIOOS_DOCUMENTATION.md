@@ -396,10 +396,7 @@ Create a `.env` file in the `backend/` directory with the following variables:
 PORT=5000
 MONGO_URI=mongodb://127.0.0.1:27017/portfolioos
 ADMIN_PASSWORD=your_secure_admin_pin
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your_email@gmail.com
-SMTP_PASS=your_app_password
+RESEND_API_KEY = your_apikey
 PROD_ORIGIN=http://localhost:5173
 ```
 
